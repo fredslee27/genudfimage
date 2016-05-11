@@ -1,4 +1,4 @@
-extern int genudfimage_main (int, char *[])
+extern int genudfimage_main (int, char *[]);
 
 int main (int argc, char *argv[])
 {
