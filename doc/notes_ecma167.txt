@@ -1,0 +1,1364 @@
+Notes - ECMA-167/3
+
+Tab Alignment (tab stop = 8)
+|	|	|				| Tabs
+|       |       |                               | Spaces
+
+
+STABOAR = Subject To Agreement Between Originator And Recipient (interpreted to mean clarified in UDF)
+
+= Part 1 : General
+== 7.2 : Character Sets and Coding
+=== 7.2.1 : Character Set Specifications
+charspec
+! RBP	! Len	! Name				! Contents
+| 0	| 1	| Character Set Type		| uint8
+| 1	| 63	| Character Set Information	| bytes
+
+== 7.3 : Timestamp
+timestamp
+! RBP	! Len	! Name				! Contents
+| 0	| 2	| Type and Timezone		| uint16 / uint12+uint4
+| 2	| 2	| Year				| int16 (1..9999)
+| 4	| 1	| Month 			| uint8 (1..12)
+| 5	| 1	| Day 				| uint8 (1..31)
+| 6	| 1	| Hour 				| uint8 (0..23)
+| 7	| 1	| Minute 			| uint8 (0..59)
+| 8	| 1	| Second 			| uint8 (0..59 or 0..60)
+| 9	| 1	| Centiseconds 			| uint8 (0..99)
+| 10	| 1	| 100s of Microsecond 		| uint8 (0..99)
+| 11	| 1	| Microseconds 			| uint8 (0..99)
+* Microseconds divided into three parts: multiples of 10_000, multiples of 100, and multiples of 1.
+
+TypeAndTimeZone
+* Most significant 4 bits: interpretation of least significant 12 bits:
+# 0 = UTC
+# 1 = localtime
+# 2 = STABOAR
+# 3..15 = reserved
+
+
+== 7.4 : Entity Identifier
+regid
+! RBP	! Len	! Name				! Contents
+| 0	| 1	| Flags				| uint8
+| 1	| 23	| Identifier			| bytes
+| 24	| 8	| Identifier Suffix		| bytes
+
+Flags
+# 0 = Dirty
+# 1 = Protected
+# 2~7 = reserved
+
+
+
+
+
+
+
+
+
+
+
+
+
+= Part 2 : Volume and Boot Block Recognition (VBR, BBR)
+== 3.1 : Input
+* Standard for recording.
+* Address of initial sector in the volume.
+* A volume recognition space.
+
+== 3.2 : Output
+* Identification of standards used to recording information in volume.
+* Information to bring system to a known state.
+
+== 8.1 : Arrangement of data on volume
+=== 8.1.1 : Sector numbers
+Consecutive, ascending with physical address (but not necessarily equal to).
+Sector 0 = initial sector.
+== 8.2 : Volume Recognition Space (VRSP)
+* Contiguous sequence of sectors.
+* Bytes numbered consecutively through space.
+* byte 0 = first byte of first sector in VRSP.
+== 8.3 : Volume Recognition Area (VRA)
+* Recorded into Volume Recognition Space
+* Starts with a Volume Recognition Sequence located at the first byte of first sector after byte number 32_767 in the VRS.
+** Nominally byte 32_768 with typical sector sizes, but the exact location may change with unusual sector sizes.
+== 8.3.1 : Volume Recogntion Sequence (VRS)
+* Consecutively recorded sequence of one or more Volume Structure Descriptors.
+* Each VSD specifies the standard specifying interpretation of descriptor, and value of <n>.
+* First VSD starts at the first byte of first sector which it is recorded (i.e. sector-aligned)
+* Successive VSD recorded at first byte of first sector of next higher sector number higher than last sector of the previous VSD (i.e. sector-aligned)
+* Terminated by:
+** sector not a valid descriptor
+** explicit terminating descriptor
+** unrecorded sector (reads as #00...)
+** blank sector (written as #00...)
+	[VolumeRecognitionSequence extent]{
+		<CD001>0+1
+		[Extended Area] {
+			<BEA01> 1+
+			{ <VSD> | <BD> } n+
+			<TEA01> 1+
+		} 0+
+	}
+* Optional (at most 1) CD-ROM Volume Descriptor set (ECMA-119)
+* Optional Extended Area
+** Consists of any number of Volume Structure Descriptor or Boot Descriptor
+*** Typically one Volume Structure Descriptor, "NSR03"
+
+== 8.4 : Recording of descriptors
+* All descriptors recorded so first byte of descriptor coincides with first byte of a sector (i.e. sector-aligned).
+* All space after last byte of descriptor to end of sector are reserved and to be recorded as #00 (i.e. padded to sector-end with binary 0)
+
+== 9.1 : Volume Structure Descriptor (VSD)
+VolumeStructureDescriptor
+! BP	! Len	! Name				! Contents
+| 0	| 1	| Structure Type		| uint8
+| 1	| 5	| Standard Identifier		| bytes
+| 6	| 1 	| Structure Version		| uint8
+| 7	| 2_041	| Structure Data		| bytes
+
+=== 9.1.2 : Standard Identifier
+* "BEA01" (Beginning Extended Area, v1)
+* "BOOT2" (Boot, v2)
+* "CD001" (Compact Disc v1: ECMA-119)
+* "CDW02" (Compact Disc Writable v2: ECMA-168)
+* "NSR02" (Non-Sequential Recording v2: ECMA-167/2)
+* "NSR03" (Non-Sequential Recording v3: ECMA-167/3 (this))
+* "TEA01" (Terminating Extended Area, v1)
+
+== 9.2 : Beginning Extended Area
+BEA01
+! BP	! Len	! Name				! Contents
+| 0	| 1	| Structure Type		| uint8 = #00
+| 1	| 5	| Standard Identifier		| bytes = "BEA01"
+| 6	| 1	| Structure Version		| uint8 = #01
+| 7	| 2_041	| Structure Data		| #00
+
+== 9.3 : Terminating Extended Area
+TEA01
+! BP	! Len	! Name				! Contents
+| 0	| 1	| Structure Type		| uint8 = #00
+| 1	| 5	| Standard Identifer		| bytes = "TEA01"
+| 6	| 1	| Structure Version		| uint8 = #01
+| 7	| 2_041	| Structure Data		| #00
+
+== 9.4 : Boot Descriptor
+BOOT2
+! BP	! Len	! Name				! Contents
+| 0	| 1	| Structure Type		| uint8 = #00
+| 1	| 5	| Standard Identifer		| bytes = "TEA01"
+| 6	| 1	| Structure Version		| uint8 = #01
+| 7	| 1	| Reserved			| #00
+| 8	| 32	| Architecture Type		| regid
+| 40	| 32	| Boot Identifier		| regid
+| 72	| 4	| Boot Extent Location		| uint32
+| 76	| 4	| Boot Extent Length		| uint32
+| 80	| 8	| Load Address			| uint64
+| 88	| 8	| Start Address			| uint64
+| 96	| 12	| Descriptor Creation Date&Time	| timestamp
+| 108	| 2	| Flags				| uint16
+| 110	| 32	| Reserved			| #00
+| 142	| 1_906	| Boot Use			| bytes
+
+(details elided due to irrelevance to UDF)
+
+
+
+
+
+
+
+= Part 3 : Volume Structure (VS)
+== 3.1 : Input
+* Standard for recording (e.g. UDF 2.60)
+* Size of a logical sector of volume (typ. 2048)
+* Information to be recorded in Partition Contents Use field of Partition Descriptor (used to chaining into Part 4 if applicable)
+* Information to be recorded in Logical Volume Contenst Use of Logical Volume Descriptor
+=== 3.1/2 : If volume is recorded according to Part 2...
+* Contains at least one copy of Volume Recognition Sequence.
+* Volume Recognition Space is the entire volume.
+* Initial sector in volume is first sector of the volume.
+== 3.2 : Output
+* Volume sets of one or more volumes.
+* A volume space for a volume.
+* Logical setors of a fixed size for a/the volume.
+* Partitions
+* Logical volumes composed of partitions.
+* Numeric identification of the partitions within a logical volume.
+* Logical blocks of a fixed size for a logical volume.
+* The logical block size of a logical volume.
+* Attributes of a volume.
+* Attributes of a logical volume.
+* Attributes of a partition.
+* An indication that a volume may have been recorded to this Part (i.e. marking Part 3 compliant volume)
+
+== 5 : Terminology
+;anchor point
+: One of a set of logical sector numbers where descriptors (VSD extents) may be recorded
+;extent
+: contiguous sequence of logical sectors.  First sector is "address" or "location".
+;logical block
+: Unit of allocation in a logical volume.
+;logical sector
+: Unit of allocation in a volume.
+;logical volume
+: Non-empty set of partitions.
+;partition
+: Extent of logical sectors within a volume
+
+=== Editor's notes
+
+== 7.1 : Extent Descriptor
+extent_ad
+! BP	! Len	! Name				! Contents
+| 0	| 4	| Extent Length			| uint32 / uint30+uint2
+| 4	| 4	| Extent Location		| uint32
+
+* Extent length is less than 2^30, as the upper two bits encode type information.
+
+== 7.2 : Descriptor Tag
+tag
+! BP	! Len	! Name				! Contents
+| 0	| 2	| Tag Identifier		| uint16
+| 2	| 2	| Descriptor Version		| uint16 {2,3}
+| 4	| 1	| Tag Checksum			| uint8
+| 5	| 1	| Reserved			| #00
+| 6	| 2	| Tag Serial Number		| uint16
+| 8	| 2	| Descriptor CRC		| uint16
+| 10	| 2	| Descriptor CRC Length		| uint16
+| 12 	| 4	| Tag Location			| uint32
+
+=== 7.2.1 Tag Identifier
+;1
+: Primary Volume Descriptor (PVD)
+;2
+: Anchor Volume Descriptor Pointer (AVDP)
+;3
+: Volume Descriptor Pointer (VDP)
+;4
+: Implementation Use Volume Descriptor (IUVD)
+;5
+: Partition Descriptor (PD)
+;6
+: Logical Volume Descriptor (LVD)
+;7
+: Unallocated Space Descriptor (USD)
+;8
+: Terminating Descriptor (TD)
+;9
+: Logical Volume Integrity Descriptor (LVID)
+
+=== 7.2.2 Descriptor Version
+* Value is 2 or 3.
+** 3 indicates ECMA-167/3 Part 3.
+** 2 indicates EMCA-167/2 Part 3.
+** (i.e. revision of ECMA-167)
+* Volume may contain a mix of versions due to transitioning versions (related to backwards-compatibility).
+
+=== 7.2.3 Tag Checksum
+* Sum modulo 256 of bytes 0..3 and 5..15 of tag (i.e. all tag's fields except the checksum field itself; alternately calculate with this field set to 0).
+
+=== 7.2.5 Tag Serial Number
+* Identifies a set of descriptors.
+* 0 = no such set.
+* (Can be leveraged for file versioning in a disaster recovery context?)
+
+=== 7.2.6 Descriptor CRC
+* CRC starting from the first byte after the tag, for the number of bytes specified in Descriptor CRC Length.
+* CRC_ITU-T polynominal: x^16 + x^12 + x^5 + 1
+* Skip CRC check by setting this field and length to 0 (zero-length is zero iteration which evaluates to CRC=0).
+
+=== 7.2.7 Descriptor CRC Length
+* Number of bytes after the last byte of tag used to calculate CRC.
+* Skip CRC check by setting this field and CRC to 0 (zero-length is zero iteration which evaluates to CRC=0).
+
+=== 7.2.8
+* Specified logical sector of the first byte of the descriptor
+* Used to self-authenticate the tag, e.g. distinguishing from "dead" tags that archived to the volume.
+
+
+== 8.1 : Arrangment of information on a volume
+=== 8.1.1 : Sector Numbers
+* Each sector in volume has unique sector number.
+* Sector numbers are consecutive integers assigned in ascneding order, with physical address.
+* Sector number 0 assigned to lowest physical address of volume.
+
+=== 8.1.2 : Logical sector
+* Sector of a volume, organized into logical sector of equal length.
+** This length is called "logical sector size"
+** Is a integer multiple of 512 bytes.
+** No smaller than smallest sector of the volume (typ. 512 for old HDD, 2048 for CD/DVD/BD, 4096 for AT HDD).
+* Each logical sector begins in a different sector.... (logical sectors are aligned on physical sectors).
+* Logical sectors can be composed of multiple physical sectors.
+* Minimum of 256 logical sectors per volume.
+* Unrecorded physical sectors interpreted as #00 bytes.
+* Logical sectors are not padded; any bytes after the last recorded byte of a logical sector until the end of sector are undefined.
+** Should be construed as unreadable.
+** Writing, probably implementation-dependent, but ends up unreadable anyway.
+* Either completely recorded or completely unrecorded.
+
+== 8.2 : Volume Space
+* The set of all logical sectors in a volume.
+* Bytes int he volume space numbered with consecutive integers, starting with 0.
+* Given s = number of bytes in logical sector, byte b of volume space = rem(b,s) of logical sector ip(b/s).
+
+== 8.3 : Volume Descriptor
+* Contains:
+** Primary Volume Descriptor
+** Implementation Use Volume Descriptor
+** Partition Descriptor
+** Logical Volume Descriptor
+** Unallocated Space Descriptor
+
+== 8.4 : Volume Descriptor Sequence
+=== 8.4.1 : Contents of Volume Descriptor Sequence
+* Contains one or more Primary Volume Descriptors
+** PVD....
+** Each PVD has an assigned Primary Volume Descriptor Number.
+** Only one prevailing PVD has PVDN=0.
+* Contains zero or more Implementation Use Volume Descriptors
+** Identifies an implementation (e.g. UDF) and information pertinent to that.
+* Contains zero or more Partition Descriptors.
+** Each specify a partition, attributes of it, and its partition number (partition identification)
+* Contains zero or more Unallocated Space Descriptors
+** Identifies volume space available for allocation partitions or for recording Volume Descriptor Sequences
+* Each Volume Descriptor has an assigned Volume Descriptor Sequence Number.  All VD with identical VDSN have identical contents.
+* VDSN typically generated by adding 1 to the largest seen VDSN.
+=== 8.4.2 : Recording of the Volume Descriptor Sequence
+* Sequence of extents of logical sectors in volume space.
+* Trailing sectors are available for recording decriptors.
+	[VolumeDescriptorSequence extent] {
+		<volume_descriptor> 0+
+		[Terminator] {
+			<VDP> | <TD> | <unrecorded>
+		} <trailing_logical_sectors> 0+
+	}
+* Volume Descriptor Sequence Extent:
+** Zero or more Volume Descriptor (types 1..7,9), optionally ending with:
+*** Volume Descriptor Pointer, to chain to another VDS extent
+*** Terminating Descriptor
+*** Unrecorded sector
+
+==== 8.4.2.1 : Anchor Points
+* Two or more of the of the following:
+** Logical sector 256
+** Logical sector s-256 (where s is final logical sector)
+** sector s
+** non-zero integer multiples of k=ip(s/59) (i.e. any 59th logical sector)
+*** 59 is arbitrary but documented.
+
+==== 8.4.2.2 : Reserve Volume Descriptor Sequence Set
+* May exist (i.e. not required)
+* Identified in Anchor Volume Descriptor Pointer.
+* No sectors may overlap Main Volume Descriptor Sequence and Reserve Volume Descriptor Sequence
+** Intended for recovery from degraded medium, so the two sets should be physically duplicated.
+
+==== 8.4.2.3 : Equivalent Volume Descriptor Sequences
+* Comparison of Main Volume Descriptor Sequence and Reserve Volume Descriptor Sequence through calculating a canonical form:
+*# Ignore Volume Descriptor Pointers.
+*# Ignore all but one descriptor each Volume Descriptor Sequence Number.
+*# In each descriptor, set to 0 the following tag fields:
+*#* Tag Checksum
+*#* Descriptor CRC
+*#* Descriptor CRC Length
+*#* Tag Location
+*# Sort remaining descriptors as byte sequences.
+*# Concatenate the descriptors in sorted order.
+
+=== 8.4.3 : Prevailing Descriptors
+* In general, the descriptor class with highest Volume Descriptor Sequence Number.
+** Among Primary Volume Descriptors with same Volume Identifier, Volume Set Identifier, and Descript Character Set fields.
+** Among Partition Descriptors with identical Partition Numbers.
+** Among Logical Volume Descriptors with same Logical Volume Identifier and Descriptor Character Set
+** Among Unallocated Space Descriptors.
+* N.B. also specifies what same/conflicting descriptors are; VDSN can interpreted as a versioning number.
+
+=== 8.4.4 : Recording of Descriptors
+* Byte Position fields have first byte of descriptor coincide with first byte of logical sector (i.e. logigal-sector-aligned)
+* Relative Byte Position fields have no restrictions other than location within the descriptor.
+* All bytes after end of last descriptor to end of logical sector are reserved for future and set to #00.
+* Most descriptors (in this Part 3) are 512 bytes long.
+
+== 8.5 : Allocation of Volume Space
+* Logical Sector = unit of allocation for the volume space.
+* Allocated for Voume Descriptor Sequence, Anchor Volume Descriptor Pointer, or (entire) partitions.
+* Taken from unallocated volume space specified in prevailing Unallocated Space Descriptor.
+* VDS and ADVP not recorded in volume space allocated to rewritable/overwritable partition (i.e. outside of partition or in read-only partitions).
+* Bad assumption: volume space = allocated sectors + unallocated sectors.
+** some sectors may be used for non-allocation purposes, such as hardware-level defect management.
+
+== 8.6 : Volume Set
+* Consists of one or more volumes having volume set identification common to all volume sets.
+** In other words, volumes with the same Volume Set Identifier combine into a Volume Set.
+* Volumes in a volume set are numbered with consecutive integers in ascending order starting from 1.
+** This number is the assigned Volume Sequence Number.
+* Prevailing Primary Volume Descriptor contains:
+** volume set identification
+*** Volume Set Identifier
+*** Descriptor Character Set
+** volume identification
+*** Volume Identifier
+*** Descriptor Character Set
+** (is-multi-volume field?)
+** Exactly one of volume set identifications on a volume to be marked as common to each volume in the volume set.
+** Same volume identification not to be used by more than one volume of a volume set (i.e. no duplicate volid).
+
+== 8.7 : Partition
+* Extent of a volume.
+* Identified by a Partition Number 0..65_535.
+* Recorded in a Partition Descriptor.
+* Prevailing instance of Partition Descriptor (for a given partition number):
+** whether volume space has been allocated to the partition.
+** may specify an identification of partition's content.
+* Partitions may overlap; typically in the sense of providing a set of partitioning schemes available to the user, and committing to one of them.
+
+== 8.8 : Logical Volume
+* Specifies:
+** Logical Volume Identifier
+** logical block size of the logical volume
+** ordered list of parittions comprising the logical volume
+* Partitions assigned consecutive ascending integers starting from 0.
+** "partition reference number", the numeric identification
+* Prevailing instance = LVD with highest Volume Sequence Number in volume set.
+* More than one logical volume allowed in a volume set.
+* Logical Volume Descriptors for all logical volumes recorded in volume with highest VDSN.
+* Logical volume belongs to one volume set.
+
+=== 8.8.1 : Logical blocks
+* Logical sectors of a partition in a lgoical volume are organized into logical blocks of equal length.
+* Length is multiple of 512 bytes, no smaller than logical sector of the volume.
+* Logical block size of a given partition are the same (different partition may have different logical block size)
+* Logical blocks are aligned on logical sectors.
+* Space between last byte of a block and the last byte of the sector is undefined (i.e. internally-fragmented space is undefined).
+
+=== 8.8.2 Logical Volume Integrity
+* Describes status of information recorded on a logical volume.
+* Prevailing instance is the last LVID processed.
+* status:
+** Open Integrity Descriptor - recorded before any data is recorded since the last Close Integrity Descriptor
+** Close Integrity Decriptor - recorded after the data is recorded and is otherwise consistent in a manner not described in this standard (ECMA-167/3)
+* N.B. Some DVD+RW recorders might use to this to do a straight dump of video stream, to be organized into titles and chapters in a "finalize" step.  Notably the that video dump can be consistent but not specified by ECMA-167.
+
+
+
+== 9.1 : NSR Descriptor
+* Part 3 descriptor
+NSR03
+! BP	! Len	! Name				! Contents
+| 0	| 1	| Structure Type		| uint8 = #00
+| 1	| 5	| Standard Identifier		| bytes = "NSR03"
+| 6	| 1	| Structure Version		| uint8 = 1
+| 7	| 1	| Reserved			| #00
+| 8	| 2_040	| Structure Data		| #00...
+
+== 10.1 : Primary Volume Descriptor
+! BP	! Len	! Name					! Contents
+| 0	| 16	| Descriptor Tag			| tag (Tag=1)
+| 16	| 4	| Volume Descriptor Sequence Number	| uint32 
+| 20	| 4	| Primary Volume Descriptor Number	| uint32 
+| 24	| 32	| Volume Identifier			| dstring
+| 56	| 2	| Volume Sequence Number		| uint16 
+| 58	| 2	| Maximum Volume Sequence Number	| uint16 
+| 60	| 2	| Interchange Level			| uint16 
+| 62	| 2	| Maximum Interchange Level		| uint16 
+| 64	| 4	| Character Set List			| uint32 
+| 68	| 4	| Maximum Character Set List		| uint32 
+| 72	| 128	| Volume Set Identifier			| dstring 
+| 200	| 64	| Descriptor Character Set		| charspec 
+| 264	| 64	| Explanatory Character Set		| charspec 
+| 328	| 8	| Volume Abstract			| extent_ad 
+| 336	| 8	| Volume Copyright Notice		| extent_ad 
+| 344	| 32	| Application Identifier		| regid 
+| 376	| 12	| Recording Date and Time		| timestamp 
+| 388	| 32	| Implementation Identifier		| regid 
+| 420	| 64	| Implementation Use			| bytes
+| 484	| 4	| Predecessor Volume Descriptor Sequence Location	| uint32 
+| 488	| 2	| Flags					| uint16 
+| 490	| 22	| Reserved				| #00 bytes
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+= Part 4 : File Structure
+== 3.1 : Input
+* Volume sets of one or more volumes (set of Volume).
+* Means of assigning volume sequence numbers (generate VSN).
+* Logical volumes composed of partitions (set of LogicalVolume).
+* Numerical identification of the partitions within a logical volume (list of Partition).
+* Identification of a logical volume on which one or more file sets are recorded (list of FileSet).
+* Division of partitions for a logical volume into fixed size logical blocks (partition is block-addressable)
+* Numeric identification of logical blocks in a partition (partition is linear block addressable)
+* Size of a logical block for a logical volume, expected to be multiple of 512 bytes.
+* Means for detecting if a logical block is unrecorded.
+* Means for identifying first extent of the File Set Descriptor Sequence of a logical volume.
+* Means for specifying Logical Volume Header Descriptor of a logical volume.
+* Means of identifying for each partition (that has a file set):
+** Unallocated Space Table and Unallocated Bit Map
+** Freed Space Table and Freed Bit Map
+** Partition Integrity Table
+== 3.1/2 : Input, compliant with Part 3
+* Partitions numbered according to 3/8.8
+* Local block is unrecorded if all logical sectors in that logical block are unrecorded; and either completely recorded or completely unrecorded.
+* Extent of first File Set Descriptor Sequence identified by a long_ad in the Logical Volume Content Use field of LVD describing the logical volume of the FSD (i.e. LogicalVolumeDescriptor.LogicalVolumeContentUse is type long_ad pointing to FileSetDescriptorSequence).
+* Logical Volume Header recorded in Logical Volume Contents Use of the prevailing Logical Volume Integrity Decriptor (i.e. LogicalVolumeIntegrityDescriptor.LogicalVolumeContentUse is of type LogicalVolumeHeader).
+* Partition Contents Use field of Partition Descriptor recorded as a Partition Header Descriptor, with "+NSR03" in its Partition Contents (i.e. PartitionHeaderDescriptor.PartitionContentsUse is type PartitionHeader, with PartitionHeader.PartitionContents="+NSR03")
+
+== 3.2 : Output
+* Data space of a file.
+* Attributes of a file.
+* Attributes of a directory.
+* Attributes of a diretory hierarchy.
+
+== 5 : Terminology
+;extent
+: set of logical blocks in contiguous ascending sequence, address/location of extent is the first logical block in the sequence.
+;file set
+: collection of files and directories
+;group ID
+: Identification of a group of users
+;logical block
+: unit of allocation of a logical volume.
+;logical volume
+: Non-empty set of partition over which one or more file sets are recorded.
+;partition
+: An extent of logical blocks within a volume.
+;stream
+: A data component of a file.
+;user ID
+: An identification of a user.
+
+== 7.1 : Recorded address
+lb_addr
+! BP	! Len	! Name				! Contents
+| 0	| 4	| Logical Block Number		| uint32
+| 4	| 2	| Partition Reference Number	| uint16
+
+== 7.2 : Descriptor Tag
+tag - same as 4/2
+
+=== 7.2.1 : Tag Identifier
+;8
+: Terminating Descriptor (TD)
+;256
+: File Set Descriptor (FSD)
+;257
+: File Identifier Descriptor (FID)
+;258
+: Allocation Extent Descriptor (AED)
+;259
+: Indirect Entry (IE)
+;260
+: Terminal Entry (TE)
+;261
+: File Entry (FE)
+;262
+: Extended Attribute Header Descriptor (EAHD)
+;263
+: Unallocated Space Entry (USE)
+;264
+: Space Bitmap Descriptor (SBD)
+;265
+: Partition Integrity Entry (PIE)
+;266
+: Extended File Entry (EFE)
+
+== 8.1 Volume Set
+* Each volume in a volume set has an assigned volume sequence number (qv. 4/3.1).
+== 8.2 Arrangement of information on a volume set
+* Logical Volume and its related file sets are recorded on a volume set.
+* Identification of the logical volumes and relaetd file set descriptor are recorded in the volume with the highest volume sequence number in the volume set.
+== 8.3 Arrangement fo information on a logical volume
+* Logical volume is a set of partitions on one or more volumes.
+* Each partition = extent of logical blocks, with an identification (partition number).
+* Address in a logical volume has two parts:
+** Partition within the logical volume.
+** Logical block number relative to the start of that partition.
+** (q.v. extent_ad)
+=== 8.3.1 File Set Descriptor Sequence
+	[FileSetDescriptorSequence extent] {
+		[Terminator] {
+			<FSD> | <TD> | <unrecorded>
+		} <trailing_logical_block> 0+
+	} 0+
+* Sequence of FileSetDescriptors, optionally ending with:
+** (one last) FileSetDescriptor
+** Terminating Descriptor
+** Unrecorded logical block
+* First extent of sequence identified by Input (PVD.lvcu).
+* Subsquent extents identified by the Next Extent field of FSD (FSD.ne)
+* Extent of sequence terminated by one of:
+** unrecorded logical block
+** Terminating Descriptor
+** FileSetDescriptor with a Next Extent field to subsequent extent of sequence (linked list).
+* All FileSetDescriptor have an assigned file set descriptor number.
+* Prevailing FileSetDescriptor is one with highet file set descriptor number.
+* One of the (or the only) FileSetDescriptor should have file set number = 0.
+* Specifies a file set identification.
+* Multiple prevailing FileSetDescriptors allowed, as long as their identifications are distinct.
+== 8.4 : Arrangement of information on a partition
+* Means for identifying location for each of the following:
+** Unllocated Space Table and Unallocated Bit Map
+** Fred Space Table and Freed Bit map
+** Partition Integrity Table
+== 8.5 : File set
+* FileSetDescriptor identifies the root of a directory hierarchy.
+* Prevailing FileSetDescriptor specifies:
+** Name of logical volume it is recorded on (bi-directional consistency check)
+** Set of character allowed in certain fields (e.g. UTF-8)
+** Identifcation of the root of directory hierarchy (root directory)
+** Copyright and Abstract Information for the file set.
+== 8.6 : Directories
+* Directory hierarchy = set of directories descended from a single root directory.
+* Contains zero or more file or directory identifications:
+** Parent directory
+** Component file
+** Subdirectory
+* Specifies these components with with FileIdentifierDescriptor.
+* Alias = directory descriptor identifying a component by name, type=SymbolicLink
+* Parent Directory = identifying another directory by other than an alias.
+** Different directories may share parent directory.
+** And each directory has only one parent directory.
+** Root Directory = directory where the parent is itself.
+* Name length is greater than 0.
+* Each entry indicates whether is a directory or not.
+* If an alias (symbolic), indicated in the entry.
+* Directory recorded as:
+	{
+		<FileIdentiiferDescriptor>
+	} 0+
+* For the descriptors:
+** no more than one descriptor with the same FileIdentifier and FileVersionNumber
+** directory entry has FileVersionNumber = 1.
+** exactly one FID identifying the parent directory.
+** descriptor ordering specified in 4/8.6.1 (next) and 4/14.6.8
+* FileEntry does not specify CharacterSetInformationExtendedAttribute (i.e. the file contents are pure binary).
+* Otherwise, the relevant Character Set for d-strings are in the FileSetDescriptor.
+=== 8.6.1 : Order of directory descriptors
+# Ascending order according to relative value of File Identifier
+#* If same value in all byte positions, FileIdentifiers are equal
+#* not same length -> pad shorter with #00 to match lengths
+#* (now) same length -> compare each byte one at a time, greater FileIdentifer is the one with first greater byte value.
+#* In other words, byte-string comparison.
+# Descending order according to the relative value of File Version Number (i.e. newest versio first)
+* Sorting still applies to entries marked deleted (delete flag is independent of name).
+* Maximum number of entries (directory + files) < 2^32.
+== 8.7 : Pathname
+* Specifies a file or directory by name.
+* Length of the pathname is greater than 0.
+* Consiste of a sequence of one or more path components:
+** Normally interpreted as relative to the directory specified by predecessor.
+** Predecessor of the first component is the direcotry in which the pathname is described.
+** Final component specifies directory, file, alias-to-file, or alias-to-directory
+** The other components specify directory or alias-to-directory.
+=== 8.7.1 : Resolved Pathname
+* In a directory hierarchy, every pathname specifying file or directory has an equivalent resolved pathname, where:
+** First component is a PathComponent with a ComponentType of 2
+** Other components are PathComponent with ComponentTypeof 5 and is not an alias.
+* Length of resolved pathname = sum of:
+** value of ComponentIdentifierLength field for each component
+** number of components
+* Length is theoretical, and may change subject to localization, operating system, etc. (i.e. not necessarily '/' as separator).
+* Does not account for length of file version number.
+
+== 8.8 : Files
+* Described by a FileEntry or ExtendedFileEntry
+** Specifies attributes of file.
+** Specifies location of file's recorded data.
+* Recorded in one of the following ways:
+** Ordered sequence of extents of logical blocks (short_ad, long_ad, ext_ad); may be recorded or unrecorded, and allocated or unallocated.
+*** Can exist on toher partitions if using long_ad or ext_ad
+** In the Allocation Descriptors field of a FileEntry (i.e. direct storage)
+=== 8.8.1 : Attributes of a file
+* Some attributes are in the fields of FileEntry, others recorded as Extended Attributes.
+=== 8.8.2 : Data space of a file
+* One of the following:
+** Ordered sequence of extents: the extents are the data space of file.
+** In Allocation Descriptors field of FileEntry
+*** number of bytes specified by Length of Allocation Descriptor field
+* Information Length = number of bytes in data space.
+=== 8.8.3 : Streams of a File
+* One main data stream.
+** Identified by FileEntry or ExtendedFileEntry.
+* Zero or more named data streams.
+** Identified by a StreamDirectory
+** Stream Directory ICB field of ExtendedFileEntry.
+** Each entry identifies one of the streams.
+** Stream directory identifies main stream [again] as the "parent entry".
+
+== 8.9 : Record structure
+(Ignored for UDF)
+
+== 8.10 : Information Control Block (ICB)
+* An entry in ICB describes a recorded instance of a file.
+* Set of entries describing recorded instances of a file described by entries in one or more ICBs.
+* Composed of sequence of ICB entries recorded in an extent of logical blocks.
+* Entry is one of the following:
+** direct entry, describes the recorded occrrence of a file or set of extents.
+** Indirect Entry, describing another ICB
+** Termianl Entry, indicating no more entries after this one
+** unrecorded logical block, also indicating no more entries.
+* Each entry specifies:
+** Maximum number of entries recordable in the ICB.
+** Number of direct entries recorded in ICB hierarchy prior to recording the entry.
+* Recorded after all entries with lower addresses have been recorded.
+* One algorithm for traversing the ICB hierarchy, but many algorithms for building it (q.v. ICB strategies).
+
+=== 8.10.1 : ICB hierarchy
+* Set of ICBs descended from a root ICB.
+* Root ICB is the only ICB at level 0 of the hierarchy.
+* Parent ICB = the ICB that identifies another ICB by an indirect entry.
+* Parent ICB is at level m of the hierarchy, (child) ICB is at level m+1.
+* Different ICBs may share the same parent.
+* N.B. ICB hierarchy is a tree-like structure.
+
+== 9.1 : Extended attributes
+* Specifies:
+** Attribute Type (value 0..2^32-1)
+** Attribute Subtype (value 0..2^8-1)
+** (maybe) attribute-specific information
+* Associated with a file.
+* Recorded in one or more extended attributes psaces associated with the file.
+* Three classes of attribute types:
+*# Types 1, 3, 5, 6, 12, 2_048, 65_536 registered per ISO/IEC 13800
+*# Types 2, 4, 7, 8, 9, 10, 11 registered per ISO/IEC 13800, are nto recorded in ExtendedAttributes spaces of file.
+*# Types 13 through 2_047 reserved for future ISO/IEC 13800.
+*# Type 0 reserved for future standardization per ISO/IEC 13800 (or successor?)
+*# Types 2_049 through 65_535, registered+reserved for implementation use per ISO/IEC 13800
+*# Types 65_537 and above, registered+reserved for application use per ISO/IEC 13800
+* Count constraints:
+** Types 1, 3, 5, 6, 12 = zero or one
+** Types 0, 2, 4, 7, 8, 9, 10, 11 = zero
+** Type 2_048 or 65_536 = zero or more
+** Types 13 through 2_047 = zero or more
+** Types 2_049 through 65_535 = zero or more
+** Types 65_537 and above = zero or more
+* Interpretation of attribute specific fields:
+*;2_048
+*: specified by regid, Implementation Identifier field of attribute
+*;65_536
+*: specified by regid, Application Identifer field of attribute
+*;13 through 2_047, 2_049 through 65_535, and 65_537 and above
+*: specified by registration per ISO/IEC 13800 of attribute type and subtype
+* Multiple instances of extended attribute may or may not have to be identical depending on registration (exact type)
+* Extended attributes space is one of:
+** the Extended Attributes field of the FileEntry
+** file described by an ICB identified in FileEntry
+* Format:
+	<ExtendedAttributeHeaderDescriptor>
+	<ExtendedAttribute> 0+
+* Recorded in three non-overlapping areas within an extended attribute space:
+*# starting with first byte after EAHD
+*# starting at a byte of ExtendedAttributeSpace specified in EAHD for types 2_048 through 65_535 (may be empty/missing)
+*# starting at a byte of ExtendedAttributeSpace specified in EAHD for types 65_536 and above (may be empty/missing)
+
+== 9.2 : Stream Directory
+* Identifies all data streams of a file.
+* Described by Stream Directy ICB entry in FileEntry
+* Contains set of FileIdentifierDescriptor, each identifying a stream of the file.
+* Descriptors in directory:
+** no more than one descriptor with the same FileIdentifier + FileVersionNumber
+** Exactly one FileIdentiferDescriptor identifying the parent (main data stream)
+** Descriptors ordered according to 4/8.6.1 (above)
+
+== 10 : Partition Space Management
+* Two types of space managed:
+** Unallocated Space = Space ready for allocation
+** Freed Space = Space that may require preparation before alocation (mainly MO drives)
+* Specified by space set, specifies collection of logical blocks in partition.
+** Recorded as either Space Table or Space Bitmap.
+* Unallocated Space Set of a partition is a space set; logical block in this set may be allocated for recording.
+* Freed Space Set of a partition is a space set; logical block in this set may be allocated for recording, but may required preparation before recording (MO drives).
+* Identified by PartitionHeaderDescriptor
+
+== 10.1 : Space sets (SpaceTable, SpaceBitmap)
+* Recorded as either SpaceTable or SpaceBitmap
+* Space Table = ICB hierarchy consisting of IndirectEntry and UnallocatedSpaceEntry.
+** Member logical blocks defined by SpaceEnry in the SpaceTable.
+* Space Bitmap = SpaceBitmapDescriptor, sequence of n bits recorded in a single extent, where n in number of logical blocks in partition.
+** Bit s corresponds to bit rem(s,8) of byte ip(s/8), where 0 is first byte of extent.
+** Member logical blocks are those where its corresponding bit position is 1.
+* TODO: more ntoes
+
+== 11 : Partition Integrity
+* Specifies the status of the information recorded in medium, recorded as Partition Integrity Table specified by Partition Header Descriptor.
+* ICB, consisting of IndirectEntry and PartitionIntegrityEntry:
+** Open Integrity Entry = recorded before any data is written to the partition since last Close Integrity Entry.
+** Close Integrity Entry = recorded after all user data are completely recorded and descriptors recorded to the partition.
+** Stable Integry Entry = like Close Integrity Entry, but no constraints on data of files with types 0, 5, 6, 7, 9.
+
+== 12 : Allocation Descriptors
+* Specifies location, length, and type of extent.
+* Type is one of:
+** Recorded data (extent in use)
+** Allocated and unrecorded space (extent reserved for use)
+** Space neither allocated nor recorded (unallocated)
+* Contents of unallocated or unrecorded data interpreted as #00 bytes.
+* Allocation = reserving one or more extents for curretn or future use.
+* Sequence of allocation descriptors recorded contiguously.
+* Terminated by:
+** End of field
+** Allocaiton Descriptor with Extent Length = 0
+** Allocation Descriptor identifying a continuation extent (q.v. linked list)
+* Information Length = bytes in the extent
+** in Extended Allocatino Descriptor (ext_ad), specified explicitly.
+** in other Allocation Descriptor types, coincides with (implied equal to) length of extent.
+
+== 12.1 : Description of Files
+* Sequence of allocation descriptors for extents of a file recorded as FileBody followed by FileTail:
+	[FileBody] {
+		<allocation_descriptor>(extent length as multiple of LBS) 0+
+		<allocation_descriptor>(no length constraint) 0+1
+	}
+	[FileTail] {
+		<allocation_descriptor>(allocated and unrecorded) 0+
+	}
+** Allocated/recorded allocation descriptors must points to extents that are whole multiples of the logical block size
+** last recorded allocation descriptor does not have such constraint?
+** tail is identified by allocated-but-unrecorded extent {for allocation descriptor}.
+** Type of allocation descriptor indicated by flags in ICB Tag
+* Sparse file can be represented with unallocated+unrecorded extents in the sparse regions (unrecorded extents read as #00).
+
+== 13 : Recording of descriptors
+* Descriptors with {absolute} Byte Position align to logical block.
+* Descriptor length no larger than size of a logical block.
+** Space Bitmap Descriptor is the one exception.
+* Descriptors with Relative Byte Positions no restriction block alignment (other than where described in applicable descriptor)
+* Space between end of descriptor to end of logical block reserved for future standardization, recorded as #00
+
+== 14.1 : File Set Descriptor (FSD)
+! BP	! Len	! Name				! Contents
+| 0	| 16	| Descriptor Tag		| tag (Type=256)
+| 16	| 12	| Recorded DateTime		| timestamp
+| 28	| 2	| Interchange Level		| uint16
+| 30	| 2	| Maximum Interchange Level	| uint16
+| 32	| 4	| Character Set List		| uint32
+| 36	| 4	| Maximum Character Set List	| uint32
+| 40	| 4	| File Set Number		| uint32
+| 44	| 4	| File Set Descriptor Number	| uint32
+| 48	| 64	| Logical Volume ID Char.Set	| charspec
+| 112	| 128	| Logical Volume Identifier	| dstring
+| 240	| 64	| File Set Character Set	| charspec
+| 304	| 32	| File Set Identifier		| dstring
+| 336	| 32	| Copyrigh File Identifier	| dstring
+| 368	| 32	| Abstract File Identifier	| dstring
+| 400	| 16	| Root Directory ICB		| long_ad
+| 416	| 32	| Domain Identifier		| regid
+| 448	| 16	| Next Extent			| long_ad
+| 464	| 16	| System Stream Directory ICB	| long_ad
+| 480	| 32	| Reserved			| #00...
+
+* Interchange Level
+** see 4/15 (Part 4, Section 15)
+
+== 14.2 : Terminating Descriptor (TD)
+! BP	! Len	! Name				! Contents
+| 0	| 16	| Descriptor Tag		| tag (Type=8)
+| 16	| 496	| Reserved			| #00...
+* Terminate an extent of File Set Descriptor Sequence (as opposed to another FileSetDescriptor instance, or an unallocated sector)
+
+== 14.3 : Partition Header Descriptor (PHD)
+! BP	! Len	! Name				! Contents
+| 0	| 8	| Unallocated Space Table	| short_ad
+| 8	| 8	| Unallocated Space Bitmap	| short_ad
+| 16	| 8	| Partition Integrity Table	| short_ad
+| 24	| 8	| Freed Space Table		| short_ad
+| 32	| 8	| Freed Space Bitmap		| short_ad
+| 40	| 88	| Reserved			| #00...
+* Guard value of Extent.Length = 0 => entry not specified
+
+== 14.4 : File Identifier Descriptor (FID)
+! RBP	! Len	! Name				! Contents
+| 0	| 16	| Descriptor Tag		| tag (Tag=257)
+| 16	| 2	| File Version Number		| uint16
+| 18	| 1	| File Characteristics		| uint8
+| 19	| 1	| Length of File Identifer; L_FI | uint8
+| 20	| 16	| ICB				| long_ad
+| 36	| 2	| Length of Impl.Use; L_IU	| uint16
+| 38	| L_IU	| Implementation Use		| bytes
+| 38+L_IU | L_FI | File Identifer		| d-characters
+| 38+L_IU+L_FI | * | Padding (align to 4o)	| #00...
+* File Characteristics
+! bit	| interpretation
+| 0	| Existence : { 0 = show to user; 1 = hide from user }
+| 1	| Directory : { 0 = not a directory; 1 = is directory }
+| 2	| Deleted : { 0 = not deleted; 1 = is deleted }
+| 3	| Parent : { 0 = ICB for file; 1 = ICB points to parent dir }
+| 4	| Metadata : { 0,NotStreamDir = typical; 0,StreamDir = stream contains user data; 1,StreamDir = stream contains implementation data. }
+| 5~7	| reserved for future, set to 0
+* Padding
+** value = 4 * ip((L_FI+L_IU+38+3)/4) - (L_FI+L_IU+38)
+
+== 14.5 : Allocation Extent Descriptor
+! BP	! Len	! Name					! Contents
+| 0	| 16	| Descriptor Tag			| tag (Tag=258)
+| 16	| 4	| Previous Allocation Extent Location	| uint32
+| 20	| 4	| Length of Allocation Descriptor; L_AD	| uint32
+* Previous Allocation Extent Location
+** Guard value Extent.Length = 0 => not specified
+* Length of Allocation Descriptors
+** bytes of allocation descriptors after end of this descriptor
+** does not exceed logical block boundary
+
+== 14.6 : ICB Tag
+! BP	! Len	! Name				! Contents
+| 0	| 4	| Prior Rec'd.Num. of Direct Entries | uint32
+| 4	| 2	| Strategy Type			| uint16
+| 6	| 2	| Strategy Parameter		| bytes
+| 8	| 2	| Maximum Number of Entries	| uint16
+| 10	| 1	| Reserved			| #00
+| 11	| 1	| File Type			| uint8
+| 12	| 6	| Parent ICB Location		| lb_addr
+| 18	| 2	| Flags				| uint16
+* Prior Recorded Number of Direct Entries (prnde)
+** Number of DirectEntry recorded in this ICB hierarchy prior to this entry.
+*** ends up basically unused in UDF
+* Strategy Type
+** Values are 0 though 65_535
+** 0 is not specified in ECMA-167/3
+** 1 through 4 are specified in ECMA-167/3
+** 5 through 4_095 are reserved for future standarization
+** 4_096 through 65_535 are STOBOAR (q.v. UDF)
+* Maximum Number of Entries
+** sum of direct and indirect entries recorded in this ICB.
+* File Type
+*;0
+*: not specified in this standard
+*;1
+*: Unallocated Space Entry
+*;2
+*: Partition Integrity Entry
+*;3
+*: Indirect Entry
+*;4
+*: directory
+*;5
+*: random-access bytes (regular file?)
+*;6
+*: block special device
+*;7
+*: character special device
+*;8
+*: Extended Attributes
+*;9
+*: FIFO
+*;10
+*: socket
+*;11
+*: Terminal Entry
+*;12
+*: symbolic link
+*;13
+*: Stream Directory
+*;14~247
+*: Reserved for future standardization
+*;248~255
+*: STOBOAR
+
+* Flags
+! bit	! interpretation
+| 0~2	| { 0 = short_ad, 1 = long_ad, 2 = ext_ad, 3 = contents are in the Allocation Descriptors field (direct storage), 4~7 = reserved }
+| 3	| DirSorted: NotDirectory => reserved=0; Directory => { 0 = not sorted; 1 = sorted per 4/8.6.1 }
+| 4	| Nonrelocatable: { 0 = no restriction on rewrite; 1 = cannot change address, or reduce length }
+| 5	| Archive: { 0 = as implementation dictates; 1 = when file created/written }
+| 6	| Setuid, Unix sense
+| 7	| Setgid, Unix sense
+| 8	| Sticky, Unix sense
+| 9	| Contiguous: { 0 = no constraints; 1 = logical blocks follow each other }
+| 10	| System: implementation-dependent
+| 11	| Transformed: { 0 = file contents are literal; 1 = file contents subject to transform specified outside of this standard }
+| 12	| Multiversions: NotDirectory => reserved=0; Directory => { 0 = no FID with same FI (no duplicate names); 1 = duplicates allowed (distinguish with version number) }
+| 13	| Stream: { 0 = not a stream, 1 = is (used as) a stream }
+| 14,15 | reserved, 0
+
+== 14.7 : Indirect Entry
+! BP	! Len	! Name				! Contents
+| 0	| 16	| Descriptor Tag		| tag (Tag=259)
+| 16	| 20	| ICB Tag			| icbtag (Type=3)
+| 36	| 16	| Indirect Tag			| long_ad
+
+== 14.8 : Terminal Entry
+! BP	! Len	! Name				! Contents
+| 0	| 16	| Descriptor Tag		| tag (Tag=260)
+| 16	| 20	| ICB Tag			| icbtag (Type=11)
+
+== 14.9 : File Entry
+! BP	! Len	! Name				! Contents
+| 0	| 16	| Descriptor Tag		| tag (Tag=261)
+| 16	| 20	| ICB Tag			| icbtag
+| 36	| 4	| Uid				| uint32
+| 40	| 4	| Gid				| uint32
+| 44	| 4	| Permissions			| uint32
+| 48	| 2	| File Link Count		| uint16
+| 50	| 1	| Record Format			| uint8
+| 51	| 1	| Record Display Attributes	| uint8
+| 52	| 4	| Record Length			| uint32
+| 56	| 8	| Information Length		| uint64
+| 64	| 8	| Logical Blocks Recorded	| uint64
+| 72	| 12	| Access DateTime		| timestamp
+| 84	| 12	| Modification DateTime		| timestamp
+| 96	| 12	| Attirbute DateTime		| timestamp
+| 108	| 4	| Checkpoint			| uint32
+| 112	| 16	| Extended Attribute ICB	| long_ad
+| 128	| 32	| Implementation Identifier	| regid
+| 160	| 8	| Unique Id			| uint64
+| 168	| 4	| Length of Ext'd.Attr = L_EA	| uint32
+| 172	| 4	| Length, Alloc'n Descr = L_AD	| uint32
+| 176	| L_EA	| Extended Attributes		| bytes
+| 176+L_EA | L_AD | Allocation Descriptors	| bytes
+
+* Permissions
+! bit	! interpretation
+| 0	| Other Execute
+| 1	| Other Write
+| 2	| Other Read
+| 3	| Other Chattr
+| 4	| Other Delete
+| 5	| Group Execute
+| 6	| Group Write
+| 7	| Group Read
+| 8	| Group Chattr
+| 9	| Group Delete
+| 10	| Owner Execute
+| 11	| Owner Write
+| 12	| Owner Read
+| 13	| Owner Chattr
+| 14	| Owner Delete
+| 15-31	| reserved, 0
+** Unix permissions sense
+* File Link Count
+** In the sense of Unix hard link count.
+** Do not copy blindly; in/de-crement properly.
+* Logical Blocks Recorded
+** Number of logical blocks specified by allocation descriptors for body of file.
+* Checkpoint
+** as in counting explicitly clicking File>Save button?
+
+== 14.10 : Extended Attributes
+=== 14.10.1 : Extended Attribute Header Descriptor (EAHD)
+! RBP	! Len	! Name				! Contents
+| 0	| 16	| Descriptor Tag		| tag (Tag=262)
+| 16	| 4	| Implementation Attr.Location	| uint32
+| 20	| 4	| Application Attributes Loc.	| uint32
+
+=== 14.10.2 : Generic format
+! RBP	! Len	! Name				! Contents
+| 0	| 4	| Attribute Type		| uint32
+| 4	| 1	| Attribute Subtype		| uint8
+| 5	| 3	| reserved			| #00...
+| 8	| 4	| Attribute Length = A_L	| uint32
+| 12	| A_L-12 | Attribute Data		| bytes
+
+=== 14.10.3 : Character Set Information
+
+[...]
+
+
+== 14.11 : Unallocate Space Entry
+! BP	! Len	! Name				! Contents
+| 0	| 16	| Descriptor Tag		| tag (Tag=263)
+| 16	| 20	| ICB Tag			| icbtag (Type=1)
+| 36	| 4	| Len. Alloc'n Descriptors = L_AD | uint32
+| 40	| L_AD	| Allocation Descriptors	| bytes
+
+== 14.12 : Space Bitmap Descriptor
+! BP	! Len	! Name				! Contents
+| 0	| 16	| Descriptor Tag		| tag (Tag=264)
+| 16	| 4	| Number of Bits = N_BT		| uint32
+| 20	| 4	| Number of Bytes = N_B		| uint32
+| 24	| N_B	| Bitmap			| bytes
+
+== 14.13 : Partition Integrity Entry
+! BP	! Len	! Name				! Contents
+| 0	| 16	| Descriptor Tag		| tag (Tag=265)
+| 16	| 20	| ICB Tag			| icbtag (Type=2)
+| 36	| 12	| Recording DateTime		| timestamp
+| 48	| 1	| Integrity Type		| uint8
+| 49	| 175	| reserved			| #00...
+| 224	| 32	| Implementation Identifier	| regid
+| 256	| 256	| Implementation Use		| bytes
+
+* Integrity Type
+*;0
+*: Open Integrity Entry
+*;1
+*: Close Integrity Entry
+*;2
+*: Stable Integrity Entry
+*;3-255
+*: reserved
+
+
+== 14.14 : Allocation Descriptors
+=== 14.14.1 : Short Allocation Descriptor
+short_ad
+! RBP	! Len	! Name				! Contents
+| 0	| 4	| Extent Length			| uint32 / uint2+uint30
+| 4	| 4	| Extent Position		| uint32
+
+* Extent.Length
+** Most significant 2 bits
+**;0
+**: Extent recorded and allocated
+**;1
+**: Extent not recorded but allocated
+**;2
+**: Extent not recorded and not allocated
+**;3
+**: The extent is the next extent of allocation descriptors
+** Lower 30 bits
+*** If 0, upper 2 bits also 0.
+
+=== 14.14.2 : Long Allocation Descriptor
+long_ad
+! RBP	! Len	! Name				! Contents
+| 0	| 4	| Extent Length			| uint32
+| 4	| 6	| Extent Location		| lb_addr
+| 10	| 6	| Implementation Use		| bytes
+
+=== 14.14.3 : Extended Allocation Descriptor
+ext_ad
+! RBP	! Len	! Name				! Contents
+| 0	| 4	| Extent Length			| uint32
+| 4	| 4	| Recorded Length		| uint32
+| 8	| 4	| Information Length		| uint32
+| 12	| 6	| Extent Location		| lb_addr
+| 18	| 2	| Implementation Use		| bytes
+
+
+== 14.15 : Logical Volume Header Descriptor (LVHD)
+! RBP	! Len	! Name				! Contents
+| 0	| 8	| Unique Id			| uint64
+| 8	| 24	| reserved			| #00...
+
+
+== 14.16 : Pathname
+=== 14.16.1 : Path Component (PC)
+! RBP	! Len	! Name				! Contents
+| 0	| 1	| Component Type		| uint8
+| 1	| 1	| Len. Component Identifier = L_CI | uint8
+| 2	| 2	| Component File Version Number	| uin16
+| 4	| L_CI	| Component Identifier		| d-characters
+
+* Component Type
+! type	! interpretation
+| 0	| reserved, 0
+| 1	| { L_CI <> 0 : root directory STOBOAR; L_CI == 0 : root directory per ISO/IEC 9945-1 }
+| 2	| specifies root directory
+| 3	| specifies parent directory of predecessor ("..")
+| 4	| specifies same directory as predecessor (".")
+| 5	| File Identifier field of object specified by predecessor matches contents of Component Identifier (text compression by pointer?)
+| 6~255	| reserved
+
+
+== 14.17 : Extended File Entry
+
+== 15.1 : Level 1 Interchange
+* MS-DOS constraints
+* Length of File Identifier does not exceed 12
+* fchar <- d-characters excluding SPACE, COMMA, FULL STOP, REVERSE SOLIDUS
+** with exceptions for code extension character.
+* Directory, File Identifer: fchar 1~8
+* Non-directory, File Identifier:
+** fchar 1~8, FULL STOP, fchar 0~3
+** fchar 0~8, FULL STOP, fchar 1~3
+* No duplicate File Identifier
+* File Link Count of File Entry not to exceed 8.
+* No symbolic links allowed.
+* Maximum length of resolved pathname is 64.
+* Specifically enumerated to avoid, for reasons:
+** AUX
+** CLOCK$
+** COM[1..4]
+** CON
+** LPT[1..4]
+** NUL
+** PRN
+
+== 15.2 : Level 2 Interchange
+* ISO/IEC 9945-1 constraints
+* Length of File Identifier does not exceed 14
+* Length of Component Identifier does not exceed 14
+* File Link Count of File Entry does not exceed 8
+
+== 15.3 : Level 3 Interchange
+* No restrictions apply.
+
+
+== 17 : Requirements for originating system
+== 17.1 : General
+* Record a set of files, all descriptors in 4/14, on a volume according to a medium interchange level in 4/15.
+* Record a list of charater set (q.v. 1/7.2.11), so that bit for CS2 is 1.
+* If scope of regid changes and cannot ensure compliance per regid, set Dirty bit of Flag of regid to 1, and otherwise do not change Identifier.
+* If file set modified, and cannot ensure compliance per specified domain, set Dirty bit of Flag of Domain Identifier Field to 1; and optionally set Domain Identiifer Field to all #00 bytes.
+== 17.2 : Mandatory access by user
+* Files
+** user provides the set of files to be recorded.
+* File Set
+** user provides which file set to use on a logical volume, identify the volumes on which the logical volume is recorded.
+** if logical volume identified specified without a file set, then use file set describd by FSD with file set number 0 (i.e. default file set is #0).
+* Descriptors and their fields specificable by user:
+** File Set Decriptor
+*** Maximum Interchange Level (do not implicitly overwrite)
+*** Maximum Character Set List (do not implicitly overwrite)
+*** File Set Number
+*** Logical Volume Identifier Character Set
+*** Logical Volume Identifier
+*** File Set Identifier
+*** Copyright File Identifier
+** File Identifier Descriptor
+*** File Version Number
+*** File Characteristics
+*** File Identifier
+* Descriptors and fields not to be implicitly overwritten:
+** File Set Descriptor
+*** Maximum Interchange Level
+*** Maximum Character Set List
+** regid
+*** Dirty bit (except per 4/17.1)
+*** Protected bit (except per 4/17.1)
+** File Entry
+*** Contiguous bit
+*** Nonrelocatable bit
+** File Identifier Descriptor
+*** Existence bit
+
+== 17.3 : Optional access by user
+* Descriptors and fields that may be specified by user, with defaults calculable:
+** File Set Descriptor
+*** Character Set List
+*** File Set Character Set
+*** Abstract File Identifier
+*** Domain Identifier
+** File Entry:
+*** Uid
+*** Gid
+*** Permissions
+*** Record Format
+*** Record Display Attributes
+*** Record Length
+*** Information Length
+*** Access DateTime
+*** Modification DateTime
+*** Attribute DateTime
+*** Checkpoint
+** Extended Attribute Descriptor
+*** Attribute Type
+*** Attribute Subtype
+*** Attribute Information
+
+=== 17.3.1 : Records
+skipped for UDF
+
+=== 17.3.2 : File types
+* For types block special device file, character special device file, FIFO, socket:
+** Record attributes supplied by user for that file, and not those not provided by user.
+
+=== 17.3.3 : Permissions
+* Best-effort at implemention permissions access
+
+== 17.4 : Restrictions
+=== 17.4.1 : Multivolume volume sets
+* basically allowed to ignore going backwards in volume set number sequence.
+* and basically don't skip volume set numbers?
+""" The implementation shall not be required to record information on the volume of a volume set that has been assigned sequence number m+1 if there is sufficient space to record the information on the volume that has been assigned a sequence number n, where 1 ≤ n ≤ m.
+
+=== 17.4.2 : Record length
+skipped for UDF
+
+=== 17.4.3 : File Times
+* If not given File Times Extended Attribute, treat as FileTimeExistence=0.
+
+=== 17.4.4 : Information Times
+* If not given Information Times Extended Attribute, treat as InformationTimeExistence=0.
+
+=== 17.4.5 : Alternative Permissions
+* may ignore bits 0-3 of Permissions field
+* if requested by owner, may ignore bits 4-7
+
+
+== 18 : Requirements for receiving system
+== 18.1 : General
+* read files and recorded descriptors per 4/14, from a volume aset with medium interchange level per 4/15.
+* Interpret all descriptors recorded with Descriptor Version of 2 or 3 (q.v. 4/7.2.2).
+* If file set not explicitly specified, use the one with file set number 0.
+
+== 18.2 : Files
+* Provide user with information constituting the recorded files.
+* (something something records)
+
+=== 18.2.1 : File Types
+* blk, chr, fifo, sock - make available the attributes of the file
+
+=== 18.2.2 : Permissions
+* best effort per 4/14.95 or 4/14.10.4.
+
+== 18.3 : Mandatory access by user
+* Allow user to supply sufficient information to locate files.
+* Allow user to specify the volumes where those files are.
+
+=== 18.3.1 : Descriptors
+* User can acces the following descriptors and fields:
+** File Set Descriptor
+*** Maximum Interchange Level
+*** Maximum Character Set List
+*** File Set Identifier
+*** Copyright File Identifier
+*** Domain Identifier
+** File Identifier Descriptors:
+*** File Version Number
+*** File Characteristics
+*** File Identifier
+
+== 18.4 : Restrictions
+=== 18.4.1 : Record Length
+skipped
+=== 18.4.2 : File Times
+* If not recorded, treat as FileTimeExistence=0.
+=== 18.4.3 : Information Times
+* If not recorded, treat as InformationTimeExistent=0.
+=== 18.4.4 : Alternative Permissions
+* May ignore bits 0-3 of Permissions
+* If requested by owner, ignore bits 4-7 of Alternat Permissions
+
+
+
+
+
