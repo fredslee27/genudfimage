@@ -677,7 +677,7 @@ tag - same as 4/2
 #* not same length -> pad shorter with #00 to match lengths
 #* (now) same length -> compare each byte one at a time, greater FileIdentifer is the one with first greater byte value.
 #* In other words, byte-string comparison.
-# Descending order according to the relative value of File Version Number (i.e. newest versio first)
+# Descending order according to the relative value of File Version Number (i.e. newest version first)
 * Sorting still applies to entries marked deleted (delete flag is independent of name).
 * Maximum number of entries (directory + files) < 2^32.
 == 8.7 : Pathname
@@ -1181,10 +1181,10 @@ ext_ad
 ! type	! interpretation
 | 0	| reserved, 0
 | 1	| { L_CI <> 0 : root directory STOBOAR; L_CI == 0 : root directory per ISO/IEC 9945-1 }
-| 2	| specifies root directory
+| 2	| specifies root directory ("/")
 | 3	| specifies parent directory of predecessor ("..")
 | 4	| specifies same directory as predecessor (".")
-| 5	| File Identifier field of object specified by predecessor matches contents of Component Identifier (text compression by pointer?)
+| 5	| File Identifier field of object specified by predecessor matches contents of Component Identifier (regular name)
 | 6~255	| reserved
 
 
