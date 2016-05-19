@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* Converter functions, byte-endian sensitive. */
 
@@ -73,6 +74,21 @@ uint64_t uint64_decode (void * space)
        | (uint64_t)(x[2])<<16 | (uint64_t)(x[3])<<24
        | (uint64_t)(x[4])<<36 | (uint64_t)(x[5])<<40
        | (uint64_t)(x[6])<<48 | (uint64_t)(x[7])<<56;
+}
+
+
+int bytestr_encode (const uint8_t * src, int srclen, void * space, int spacelen)
+{
+  int n = (srclen < spacelen) ? srclen : spacelen;  // min(srclen, spacelen)
+  memcpy(space, src, n);
+  return n;
+}
+
+uint8_t * bytestr_decode (uint8_t * src, int srclen, const void * space, int spacelen)
+{
+  int n = (srclen < spacelen) ? srclen : spacelen;  // min(srclen, spacelen)
+  memcpy(src, space, n);
+  return src;
 }
 
 
@@ -157,6 +173,34 @@ layoutvalues_dump (const layoutvalues_t layoutvalues, int count)
 
 
 
+static
+int
+_resolve_bp (const layoutdescr_t descr, const layoutvalues_t contents, int fldidx)
+{
+  const struct layoutfield_s * fld = descr + fldidx;
+  const union layoutvalue_u * valptr = contents + fldidx;
+  int bp = fld->rbp;  /* Byte Position. */
+  int vbp = 0; /* Variable Byte Position bias. */
+
+  if (fld->vbpmask)
+    {
+      /* Calculate Variable Byte Position bias. */
+      int n;
+      for (n = 0; n < 32; n++)
+        {
+          /* Bit N on => Add Content Of Word N */
+          if ( ((1 << n) & fld->vbpmask) == (1 << n) )
+            {
+              /* TODO: pick .word or .oversize? */
+              vbp += contents[n].word;
+            }
+        }
+    }
+  bp += vbp;
+
+  return bp;
+}
+
 
 int
 udf_decode (void * raw, layoutdescr_t descr, layoutvalues_t contents)
@@ -167,19 +211,22 @@ udf_decode (void * raw, layoutdescr_t descr, layoutvalues_t contents)
   struct layoutfield_s * fld = descr + fldidx;
   union layoutvalue_u * valptr = contents + fldidx;
   int bp = 0;
-  int vbp = 0;
+  //int vbp = 0;
 
   while (!complete)
     {
       fld = descr + fldidx;
       valptr = contents + fldidx;
+#if 0
       bp = fld->rbp;
       vbp = 0;
+      /* Variable Byte Position, which other BP values to offset by. */
       if (fld->vbpmask)
         {
           int n;
           for (n = 0; n < 32; n++)
             {
+              /* Bit N on => Add Content Of Word N */
               if ( ((1 << n) & fld->vbpmask) == (1 << n) )
                 {
                   /* TODO: pick .word or .oversize? */
@@ -188,6 +235,8 @@ udf_decode (void * raw, layoutdescr_t descr, layoutvalues_t contents)
             }
         }
       bp += vbp;
+#endif //0
+      bp = _resolve_bp(descr, contents, fldidx);
 
       switch (fld->fldtype)
         {
@@ -227,8 +276,83 @@ udf_decode (void * raw, layoutdescr_t descr, layoutvalues_t contents)
 }
 
 
+/*
+
+   Returns number of bytes.  Should be compared against expected number of bytes.
+*/
 int
 udf_encode (void * space, int spacelen, layoutdescr_t descr, layoutvalues_t contents)
 {
-  return 0;
+  int retval = 0;
+  unsigned int fldidx = 0;
+  int complete = 0;
+  int bp = 0;
+  int nbp = 0; /* Next Byte Position, presumed cutoff for variable-length fields. */
+  struct layoutfield_s * fld = NULL;
+  union layoutvalue_u * valptr = NULL; //contents + fldidx;
+
+  while (!complete)
+    {
+      fld = descr + fldidx;
+      valptr = contents + fldidx;
+
+      if (nbp)
+        {
+          bp = nbp;
+        }
+      if (fld->fldtype == LAYOUT_END)
+        {
+          /* End of descriptors; there is no next.  Avoid OOB. */
+          nbp = bp;
+        }
+      else
+        {
+          nbp = _resolve_bp(descr, contents, fldidx+1);
+        }
+
+      switch (fld->fldtype)
+        {
+        case LAYOUT_RESERVED:
+          break;
+        case LAYOUT_UINT8:
+          uint8_encode(space + bp, contents[fldidx].word);
+          break;
+        case LAYOUT_UINT16:
+          uint16_encode(space + bp, contents[fldidx].word);
+          break;
+        case LAYOUT_UINT32:
+          uint32_encode(space + bp, contents[fldidx].word);
+          break;
+        case LAYOUT_UINT64:
+          uint64_encode(space + bp, contents[fldidx].word);
+          break;
+        case LAYOUT_UINT128:
+          //uint128_encode(space + bp, contents[fldidx].oversize);
+          break;
+        case LAYOUT_PTR:
+            {
+              int len = nbp - bp;
+              bytestr_encode(contents[fldidx].ptr, len, space + bp, len);
+            }
+          break;
+        case LAYOUT_END:
+          if (valptr->word == bp)
+            {
+              /* Consistent. */
+              retval = bp;
+            }
+          else
+            {
+              /* Error: inconsistency. */
+              retval = bp;
+            }
+          complete = 1;
+          break;
+        }
+
+      fldidx++;
+    }
+
+  return retval;
 }
+
