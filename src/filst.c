@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,6 +7,18 @@
 
 #include "conv.c"
 
+
+
+/*
+Naming convention:
+
+_malloc - allocate space from heap, with any relevant count value.
+_free - blindly deallocate.
+_init - constructor, populate from parameters.
+_destroy - destructor, handling free inner members.
+_encode - serialize to UDF binary
+_decode - deserialize from UDF binary
+*/
 
 
 
@@ -21,6 +34,14 @@ path_component_malloc (int cilen)
   memset(retval, 0, msize);
   retval->len = cilen;
   return retval;
+}
+
+
+/* corresponding free. */
+void
+path_component_free (const struct path_component_s * obj)
+{
+  free((void*)obj);
 }
 
 
@@ -47,6 +68,13 @@ path_component_init (struct path_component_s * obj,
   obj->len = cilen;
 //  obj->ci = ci;
   memcpy(obj->d, ci, obj->len);
+  return obj;
+}
+
+
+struct path_component_s *
+path_component_destroy (struct path_component_s * obj)
+{
   return obj;
 }
 
@@ -87,8 +115,11 @@ path_component_dump (const struct path_component_s * obj)
 }
 
 
+/*
+   Create instance (decode) from UDF binary format.
+*/
 const struct path_component_s *
-path_component_decode (void * space)
+path_component_decode (void * space, int spacelen)
 {
   struct path_component_s * obj;
   layoutvalue_t contents[5] = { 0, };
@@ -105,6 +136,9 @@ path_component_decode (void * space)
 }
 
 
+/*
+   Write (encode) into UDF binary format.
+*/
 int
 path_component_encode (struct path_component_s * obj, void * space, int spacelen)
 {
@@ -122,6 +156,67 @@ path_component_encode (struct path_component_s * obj, void * space, int spacelen
 
   return retval;
 }
+
+
+
+
+struct pathname_s *
+pathname_malloc (int ncomponents)
+{
+  struct pathname_s * retval;
+  int msize = 0;
+
+  msize = (ncomponents * sizeof(struct path_component_s));
+  msize += sizeof(struct pathname_s);
+
+  retval = (struct pathname_s*)malloc(msize);
+  return retval;
+}
+
+void
+pathname_free (struct pathname_s * obj)
+{
+  free(obj);
+}
+
+/*
+   Initialize Pathname from arguments of struct path_component_s*
+*/
+struct pathname_s *
+pathname_init (struct pathname_s * obj, int ncomponents, ...)
+{
+  struct path_component_s * iter;
+  int i;
+  va_list vp;
+
+  vp = va_start(ncomponents);
+  for (i = 0; i < ncomponents; i++)
+    {
+      obj->components[i] = va_arg(vp, struct path_component_s*);
+    }
+  return obj;
+}
+
+struct pathname_s *
+pathname_destroy (struct pathname_s * obj)
+{
+  return obj;
+}
+
+/* Create instance from UDF binary. */
+struct pathname_s *
+pathname_encode (void * space, int spacelen)
+{
+  return 0;
+}
+
+/* Write into UDF binary format. */
+int
+pathname_decode (struct pathname_s * obj, void * space, int spacelen)
+{
+  return 0;
+}
+
 
 
 

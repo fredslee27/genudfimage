@@ -28,6 +28,7 @@ struct path_component_s {
     unsigned int len;  /* Length of 'd'. */
     unsigned int vers;  /* Version; typically 0 */
     unsigned char d[MAX_COMPONENT_IDENTIFIER_LEN];
+
     struct path_component_s * next;
 };
 
@@ -36,6 +37,7 @@ struct path_component_s {
 struct pathname_s {
     /* Raw storage is array of PathComponent. */
     void * raw;
+    int rawlen;
 
     int ncomponents;
     struct path_component_s * components;
