@@ -507,3 +507,216 @@ lb_addr_dump (const struct lb_addr_s * obj)
 
 
 
+
+
+
+struct tag_s *
+tag_init (struct tag_s * obj, enum tagid_e tagid, unsigned int version, unsigned int serial, unsigned int tagloc)
+{
+  if (!obj) return obj;
+
+  obj->tagid = tagid;
+  obj->vers = version;
+  obj->serial = serial;
+  obj->tagloc = tagloc;
+}
+
+unsigned int
+tag_check_sum (struct tag_s * obj)
+{
+  uint32_t accum = 0;
+  unsigned int tagval = tagid_int(obj->tagid);
+  // 16b checksum then collapse to 8b.
+  accum += tagval + obj->vers + obj->serial + obj->crc + obj->crclen;
+  accum += ((obj->tagloc >> 16) & 0xffff) + (obj->tagloc & 0xffff);
+  // sum byte0 and byte1, subtracting overflow of byte2.
+  accum = ((accum >> 8) & 0xff) + (accum & 0xff) - (accum >> 16);
+  unsigned int retval = accum & 0xff;
+  return retval;
+}
+
+int
+tag_str (const struct tag_s * obj, char buf[], int buflen)
+{
+  int n = 0;
+  n += snprintf(buf+n, buflen-n, "struct tag_s _%p = {\n", obj);
+  n += snprintf(buf+n, buflen-n, "  .tagid=%u,\n", tagid_int(obj->tagid));
+  n += snprintf(buf+n, buflen-n, "  .vers=%u,\n", obj->vers);
+  n += snprintf(buf+n, buflen-n, "  .checksum=%u,\n", obj->checksum);
+  n += snprintf(buf+n, buflen-n, "  .serial=%u,\n", obj->serial);
+  n += snprintf(buf+n, buflen-n, "  .crc=%u,\n", obj->crc);
+  n += snprintf(buf+n, buflen-n, "  .crclen=%u,\n", obj->crclen);
+  n += snprintf(buf+n, buflen-n, "  .tagloc=%u,\n", obj->tagloc);
+  n += snprintf(buf+n, buflen-n, "};");
+  return n;
+}
+
+void
+tag_dump (const struct tag_s * obj)
+{
+  char buf[512];
+  tag_str(obj, buf, sizeof(buf));
+  puts(buf);
+}
+
+
+
+unsigned int
+icb_file_type_int (enum icb_file_type_e ft)
+{
+  switch (ft)
+    {
+    case ICBFT_OTHER: return 0;
+    case ICBFT_USE: return 1;
+    case ICBFT_PIE: return 2;
+    case ICBFT_IE: return 3;
+    case ICBFT_DIR: return 4;
+    case ICBFT_REG: return 5;
+    case ICBFT_BLK: return 6;
+    case ICBFT_CHR: return 7;
+    case ICBFT_EA: return 8;
+    case ICBFT_FIFO: return 9;
+    case ICBFT_SOCK: return 10;
+    case ICBFT_TE: return 11;
+    case ICBFT_SYMLINK: return 12;
+    case ICBFT_STREAM: return 13;
+    case ICBFT_248: return 248;
+    case ICBFT_249: return 249;
+    case ICBFT_250: return 250;
+    case ICBFT_251: return 251;
+    case ICBFT_252: return 252;
+    case ICBFT_253: return 253;
+    case ICBFT_254: return 254;
+    case ICBFT_255: return 255;
+    default: return 0;
+    }
+}
+
+enum icb_file_type_e
+icb_file_type_enum (unsigned int ftval)
+{
+  switch (ftval)
+    {
+    case 0: return ICBFT_OTHER;
+    case 1: return ICBFT_USE;
+    case 2: return ICBFT_PIE;
+    case 3: return ICBFT_IE;
+    case 4: return ICBFT_DIR;
+    case 5: return ICBFT_REG;
+    case 6: return ICBFT_BLK;
+    case 7: return ICBFT_CHR;
+    case 8: return ICBFT_EA;
+    case 9: return ICBFT_FIFO;
+    case 10: return ICBFT_SOCK;
+    case 11: return ICBFT_TE;
+    case 12: return ICBFT_SYMLINK;
+    case 13: return ICBFT_STREAM;
+
+    case 248: return ICBFT_248;
+    case 249: return ICBFT_249;
+    case 250: return ICBFT_250;
+    case 251: return ICBFT_251;
+    case 252: return ICBFT_252;
+    case 253: return ICBFT_253;
+    case 254: return ICBFT_254;
+    case 255: return ICBFT_255;
+    }
+}
+
+static const char *
+icb_file_type_str (enum icb_file_type_e ft)
+{
+  switch (ft)
+    {
+    case ICBFT_OTHER: return "(other)";
+    case ICBFT_USE: return "UnallocatedSpaceEntry";
+    case ICBFT_PIE: return "PartitionIntegrityEntry";
+    case ICBFT_IE: return "IndirectEntry";
+    case ICBFT_DIR: return "Directory";
+    case ICBFT_REG: return "Regular";
+    case ICBFT_BLK: return "BlockSpecial";
+    case ICBFT_CHR: return "CharacterSpecial";
+    case ICBFT_EA: return "ExtendedAttribute";
+    case ICBFT_FIFO: return "NamedFifo";
+    case ICBFT_SOCK: return "UnixSocket";
+    case ICBFT_TE: return "TerminalEntry";
+    case ICBFT_SYMLINK: return "SymbolicLink";
+    case ICBFT_STREAM: return "Stream";
+    case ICBFT_248: return "Type248";
+    case ICBFT_249: return "Type249";
+    case ICBFT_250: return "Type250";
+    case ICBFT_251: return "Type251";
+    case ICBFT_252: return "Type252";
+    case ICBFT_253: return "Type253";
+    case ICBFT_254: return "Type254";
+    case ICBFT_255: return "Type255";
+    default: return "(unk)";
+    }
+}
+
+struct icbtag_s *
+icbtag_init (struct icbtag_s * obj,
+	     unsigned int previous_recorded_number_of_direct_entries,
+	     unsigned int strategy_type,
+	     unsigned int strategy_parameter,
+	     unsigned int maximum_number_of_entries,
+	     enum icb_file_type_e file_type,
+	     const struct lb_addr_s * parent_icb_location,
+	     unsigned int allocation_descriptor_type)
+{
+  if (!obj) return obj;
+
+  obj->prnde = previous_recorded_number_of_direct_entries;
+  obj->st = strategy_type;
+  obj->sp = strategy_parameter;
+  obj->mne = maximum_number_of_entries;
+  obj->ft = file_type;
+  obj->picbl = *(parent_icb_location);
+  memset(&(obj->flags), 0, sizeof(obj->flags));
+  obj->flags.adtype = allocation_descriptor_type;
+  return obj;
+}
+
+int
+icbtag_str (const struct icbtag_s * obj, char buf[], int buflen)
+{
+  int n = 0;
+  n += snprintf(buf+n, buflen-n, "struct icbtag_s _%p = {", obj);
+  n += snprintf(buf+n, buflen-n, "  .prnde = %u,\n", obj->prnde);
+  n += snprintf(buf+n, buflen-n, "  .st = %u,\n", obj->st);
+  n += snprintf(buf+n, buflen-n, "  .sp = %u,\n", obj->sp);
+  n += snprintf(buf+n, buflen-n, "  .mne = %u,\n", obj->mne);
+  n += snprintf(buf+n, buflen-n, "  .ft = %u, /* %s */\n",
+		icb_file_type_int(obj->ft), icb_file_type_str(obj->ft));
+  char picbl[16];
+  lb_addr_str(&(obj->picbl), picbl, sizeof(picbl));
+  n += snprintf(buf+n, buflen-n, "  .picbl = %s,\n", picbl);
+  n += snprintf(buf+n, buflen-n, "  .flags = (%c*%c%c%c%c%c%c%c%c%c%c%c)",
+		"slxd"[obj->flags.adtype],
+		obj->flags.dirsort ? 'O': 'o',
+		obj->flags.nonreloc ? 'N': 'n',
+		obj->flags.archive ? 'A' : 'a',
+		obj->flags.setuid ? 'U' : 'u',
+		obj->flags.setgid ? 'G' : 'g',
+		obj->flags.sticky ? 'T' : 't',
+		obj->flags.contiguous ? 'C' : 'c',
+		obj->flags.system ? 'Y' : 'y',
+		obj->flags.transformed ? 'X' : 'x',
+		obj->flags.multiversion ? 'V' : 'v',
+		obj->flags.stream ? 'R' : 'r');
+  n += snprintf(buf+n, buflen-n, "};");
+  return n;
+}
+
+void
+icbtag_dump (const struct icbtag_s * obj)
+{
+  char buf[512];
+  icbtag_str(obj, buf, sizeof(buf));
+  puts(buf);
+}
+
+
+
+
+
