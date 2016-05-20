@@ -356,27 +356,56 @@ pathname_normalize (struct pathname_s * obj)
 
 
 
-
-unsigned int tagid_int (enum tagid_e val)
+const char * tagid_name (enum tagid_e tagid)
 {
-  switch (val)
+  switch (tagid)
     {
-    case TAGID_PVD: return 1;
-    case TAGID_AVDP: return 2;
-    case TAGID_VDP: return 3;
-    case TAGID_IUVD: return 4;
-    case TAGID_PD: return 5;
-    case TAGID_LVD: return 6;
-    case TAGID_USD: return 7;
-    case TAGID_TD: return 8;
-    case TAGID_LVID: return 9;
+			  /*  123456789_123456789_12 */
+    case TAGID_PVD:   return "PrimaryVolumeDesc";
+    case TAGID_AVDP:  return "AnchorVolumeDescPtr";
+    case TAGID_VDP:   return "VolumeDescPointer";
+    case TAGID_IUVD:  return "ImplUseVolumeDesc";
+    case TAGID_PD:    return "PartitionDesc";
+    case TAGID_LVD:   return "LogicalVolumeDesc";
+    case TAGID_USD:   return "UnallocatedSpaceDesc";
+    case TAGID_TD:    return "TerminatingDesc";
+    case TAGID_LVID:  return "LogicalVolumeIntegrityDesc";
+
+    case TAGID_FSD:   return "FileSetDesc";
+    case TAGID_FID:   return "FileIdentifierDesc";
+    case TAGID_AED:   return "AllocateExtentDesc";
+    case TAGID_IE:    return "IndirectEntry";
+    case TAGID_TE:    return "TerminalEntry";
+    case TAGID_FE:    return "FileEntry";
+    case TAGID_EAHD:  return "ExtdAttrHeaderDesc";
+    case TAGID_USE:   return "UnallocatedSpaceEntry";
+    case TAGID_SBD:   return "SpaceBitmapDesc";
+    case TAGID_PIE:   return "PartitionIntegrityEntry";
+    case TAGID_EFE:   return "ExtendedFileEntry";
+    default: return "(unk)";
+    }
+}
+
+unsigned int tagid_int (enum tagid_e tagid)
+{
+  switch (tagid)
+    {
+    case TAGID_PVD:   return 1;
+    case TAGID_AVDP:  return 2;
+    case TAGID_VDP:   return 3;
+    case TAGID_IUVD:  return 4;
+    case TAGID_PD:    return 5;
+    case TAGID_LVD:   return 6;
+    case TAGID_USD:   return 7;
+    case TAGID_TD:    return 8;
+    case TAGID_LVID:  return 9;
 
     case TAGID_FSD: return 256;
     case TAGID_FID: return 257;
     case TAGID_AED: return 258;
-    case TAGID_IE: return 259;
-    case TAGID_TE: return 260;
-    case TAGID_FE: return 261;
+    case TAGID_IE:  return 259;
+    case TAGID_TE:  return 260;
+    case TAGID_FE:  return 261;
     case TAGID_EAHD: return 262;
     case TAGID_USE: return 263;
     case TAGID_SBD: return 264;
@@ -624,32 +653,32 @@ icb_file_type_enum (unsigned int ftval)
 }
 
 static const char *
-icb_file_type_str (enum icb_file_type_e ft)
+icb_file_type_name (enum icb_file_type_e ft)
 {
   switch (ft)
     {
     case ICBFT_OTHER: return "(other)";
-    case ICBFT_USE: return "UnallocatedSpaceEntry";
-    case ICBFT_PIE: return "PartitionIntegrityEntry";
-    case ICBFT_IE: return "IndirectEntry";
-    case ICBFT_DIR: return "Directory";
-    case ICBFT_REG: return "Regular";
-    case ICBFT_BLK: return "BlockSpecial";
-    case ICBFT_CHR: return "CharacterSpecial";
-    case ICBFT_EA: return "ExtendedAttribute";
-    case ICBFT_FIFO: return "NamedFifo";
-    case ICBFT_SOCK: return "UnixSocket";
-    case ICBFT_TE: return "TerminalEntry";
+    case ICBFT_USE:   return "UnallocatedSpaceEntry";
+    case ICBFT_PIE:   return "PartitionIntegrityEntry";
+    case ICBFT_IE:    return "IndirectEntry";
+    case ICBFT_DIR:   return "Directory";
+    case ICBFT_REG:   return "Regular";
+    case ICBFT_BLK:   return "BlockSpecial";
+    case ICBFT_CHR:   return "CharacterSpecial";
+    case ICBFT_EA:    return "ExtendedAttribute";
+    case ICBFT_FIFO:  return "NamedFifo";
+    case ICBFT_SOCK:  return "UnixSocket";
+    case ICBFT_TE:    return "TerminalEntry";
     case ICBFT_SYMLINK: return "SymbolicLink";
     case ICBFT_STREAM: return "Stream";
-    case ICBFT_248: return "Type248";
-    case ICBFT_249: return "Type249";
-    case ICBFT_250: return "Type250";
-    case ICBFT_251: return "Type251";
-    case ICBFT_252: return "Type252";
-    case ICBFT_253: return "Type253";
-    case ICBFT_254: return "Type254";
-    case ICBFT_255: return "Type255";
+    case ICBFT_248:   return "Type248";
+    case ICBFT_249:   return "Type249";
+    case ICBFT_250:   return "Type250";
+    case ICBFT_251:   return "Type251";
+    case ICBFT_252:   return "Type252";
+    case ICBFT_253:   return "Type253";
+    case ICBFT_254:   return "Type254";
+    case ICBFT_255:   return "Type255";
     default: return "(unk)";
     }
 }
@@ -687,7 +716,7 @@ icbtag_str (const struct icbtag_s * obj, char buf[], int buflen)
   n += snprintf(buf+n, buflen-n, "  .sp = %u,\n", obj->sp);
   n += snprintf(buf+n, buflen-n, "  .mne = %u,\n", obj->mne);
   n += snprintf(buf+n, buflen-n, "  .ft = %u, /* %s */\n",
-		icb_file_type_int(obj->ft), icb_file_type_str(obj->ft));
+		icb_file_type_int(obj->ft), icb_file_type_name(obj->ft));
   char picbl[16];
   lb_addr_str(&(obj->picbl), picbl, sizeof(picbl));
   n += snprintf(buf+n, buflen-n, "  .picbl = %s,\n", picbl);

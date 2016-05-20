@@ -111,6 +111,10 @@ enum icb_file_type_e {
     ICBFT_255,
 };
 
+//const char * icb_file_type_name (enum icb_file_type_e);
+unsigned int icb_file_type_int (enum icb_file_type_e);
+enum icb_file_type_e icb_file_type_enum (unsigned int);
+
 struct icbtag_s {
     unsigned int prnde; /* Prior Recorded Number of Direct Entries. */
     unsigned int st;    /* Strategy Type */
@@ -133,7 +137,6 @@ struct icbtag_s {
         unsigned int stream:1;    /* is stream */
     } flags;
 };
-
 
 struct icbtag_s * icbtag_init (struct icbtag_s *,
 			       unsigned int previous_number_of_direct_entries,
