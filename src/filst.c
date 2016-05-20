@@ -749,3 +749,142 @@ icbtag_dump (const struct icbtag_s * obj)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+layoutdescr_t udf_fid = {
+      { 0, 0, "tag", LAYOUT_PTR },
+      { 0, 16, "fvn", LAYOUT_UINT16 },
+      { 0, 18, "fc", LAYOUT_UINT8 },
+      { 0, 19, "L_FI", LAYOUT_UINT8 },
+      { 0, 20, "ICB", LAYOUT_PTR },
+      { 0, 36, "L_IU", LAYOUT_UINT16 },
+      { 0, 38, "iu", LAYOUT_PTR },
+      { (1 << 5), 38, "fi", LAYOUT_PTR },
+      { (1 << 3) | (1 << 5), 38, 0, LAYOUT_END },
+};
+
+// malloc, init, destroy, free, decode, encode, str, dump
+struct fid_s *
+fid_malloc (unsigned int dlen)
+{
+  dlen += 4;  /* TODO: less-lazy calculation. */
+  return (struct fid_s*)malloc(sizeof(struct fid_s) + dlen);
+}
+
+struct fid_s *
+fid_destroy (struct fid_s *obj)
+{
+  return obj;
+}
+
+struct fid_s *
+fid_init (struct fid_s *obj,
+	  const struct tag_s *tag,
+	  unsigned int file_version_number,
+	  unsigned int file_characteristics,
+	  const struct long_ad_s * icb,
+	  uint8_t * implementation_use,
+	  unsigned int length_implementation_use,
+	  const char * file_identifier,
+	  unsigned int length_file_identifier)
+{
+  if (!obj) return obj;
+
+  if (tag) obj->tag = *(tag);
+  obj->fvn = file_version_number;
+  obj->fc = file_characteristics;
+  if (icb) obj->icb = *(icb);
+  obj->impuse = obj->d;
+  obj->L_IU = length_implementation_use;
+  obj->fi = obj->d + length_implementation_use;
+  obj->L_FI = length_file_identifier;
+
+  return obj;
+}
+
+void
+fid_free (struct fid_s *obj)
+{
+  free(fid_destroy(obj));
+}
+
+struct fid_s *
+fid_decode (struct fid_s *obj, uint8_t * raw, int rawlen)
+{
+  layoutvalue_t contents[9] = { 0, };
+  int dlen;
+  int padding;
+
+  udf_decode(raw, rawlen, udf_fid, contents);
+  unsigned int L_FI = contents[3].word;
+  unsigned int L_IU = contents[5].word;
+  dlen = L_FI + L_IU;
+  obj = fid_malloc(dlen);
+  memset(obj, 0, sizeof(*obj));
+
+  // align to get 4-byte boundary.
+  //padding = 4 * ((L_FI + L_IU + 38 + 3) / 4) - (L_FI + L_IU + 38);
+  padding = (4 - ((L_FI + L_IU + 38) % 4)) % 4;
+  contents[8].word = padding;
+
+//  tag_decode(&(obj->tag), contents[0].ptr, 16);
+  obj->fvn = contents[1].word;
+  obj->fc = contents[2].word;
+  // obj->L_FI = contents[3].word;
+//  long_ad_decode(&(obj->icb), contents[4].ptr, 16);
+  // obj->L_IU = contents[5].word;
+  obj->impuse = obj->d;
+  obj->fi = obj->d + L_IU;
+  bytestr_decode(obj->impuse, L_IU, contents[6].ptr, L_IU);
+  bytestr_decode(obj->fi, L_FI, contents[7].ptr, L_FI);
+
+  return obj;
+}
+
+int
+fid_encode (const struct fid_s *obj, uint8_t * raw, int rawlen)
+{
+}
+
+int
+fid_str (const struct fid_s *obj, char buf[], int buflen)
+{
+  int n = 0;
+  n += snprintf(buf+n, buflen-n, "struct fid_s _%p = {\n", obj);
+  n += snprintf(buf+n, buflen-n, "  .tag = ...,\n");
+  n += snprintf(buf+n, buflen-n, "  .fvn = %u,\n", obj->fvn);
+  n += snprintf(buf+n, buflen-n, "  .fc = %u,\n", obj->fc);
+  n += snprintf(buf+n, buflen-n, "  .L_FI = %u,\n", obj->L_FI);
+  n += snprintf(buf+n, buflen-n, "  .icb = ...,\n");
+  n += snprintf(buf+n, buflen-n, "  .L_IU = %u,\n", obj->L_IU);
+  n += snprintf(buf+n, buflen-n, "  .impuse = ...,\n");
+  n += snprintf(buf+n, buflen-n, "  .fi = \"%s\",\n", obj->fi);
+  n += snprintf(buf+n, buflen-n, "};");
+  return n;
+}
+
+void
+fid_dump (const struct fid_s *obj)
+{
+  char buf[1024];
+  fid_str(obj, buf, sizeof(buf));
+  puts(buf);
+}
+
+
+
+

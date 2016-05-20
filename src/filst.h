@@ -204,3 +204,52 @@ void tag_dump (const struct tag_s *);
 
 
 
+
+
+
+struct long_ad_s {
+    unsigned int a;
+    unsigned int b;
+    unsigned int c;
+};
+
+
+
+
+/* ECMA-167/3 4/14.4 : File Identifier Descriptor */
+struct fid_s {
+    struct fid_s * next;
+
+    struct tag_s tag;	  /* Descriptor Tag */
+    unsigned int fvn;	  /* File Version Number */
+    unsigned int fc;	  /* File Characteristics */
+    unsigned int L_FI;	  /* Length of File Identifier */
+    struct long_ad_s icb; /* ICB */
+    unsigned int L_IU;	  /* Length of Implementation Use */
+
+    uint8_t * impuse;	  /* Implementation Use space in 'd'. */
+    uint8_t * fi;	  /* File Identifer space in 'd'. */
+
+    uint8_t d[];
+};
+
+// malloc, init, destroy, free, decode, encode, str, dump
+struct fid_s * fid_malloc (unsigned int);
+struct fid_s * fid_destroy (struct fid_s *);
+struct fid_s * fid_init (struct fid_s *,
+			 const struct tag_s *,
+			 unsigned int file_version_number,
+			 unsigned int file_characteristics,
+			 const struct long_ad_s * icb,
+			 uint8_t * implementation_use,
+			 unsigned int length_implementation_use,
+			 const char * file_identifier,
+			 unsigned int length_file_identifier);
+void fid_free (struct fid_s *);
+struct fid_s * fid_decode (struct fid_s *, uint8_t * raw, int rawlen);
+int fid_encode (const struct fid_s *, uint8_t * raw, int rawlen);
+int fid_str (const struct fid_s *, char [], int);
+void fid_dump (const struct fid_s *);
+
+
+
