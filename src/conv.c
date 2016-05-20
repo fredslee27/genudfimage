@@ -163,8 +163,35 @@ struct layoutfield_s udf_lb_addr[] = {
 
 #include <stdio.h>
 int
+layoutvalues_str (const layoutvalues_t layoutvalues, int count, char buf[], int buflen)
+{
+  int n = 0;
+  int i;
+  n += snprintf(buf, buflen, "layoutvalue_t _%p [%d] = {\n", layoutvalues, count);
+  int len = layoutvalues[1].word;
+  for (i = 0; (i < count) && (n < buflen); i++)
+    {
+      n += snprintf(buf+n, buflen-n, "  { .word=%lu, .ptr=%p,",
+		    layoutvalues[i].word, layoutvalues[i].ptr);
+      if ((i == 3) && (len > 0))
+	{
+	  const char * s = (const char *)(layoutvalues[i].ptr);
+	  n += snprintf(buf+n, buflen-n, " .s=\"%s\"", s);
+	}
+      else
+	{
+	  n += snprintf(buf+n, buflen-n, " .s=%p", layoutvalues[i].ptr);
+	}
+      n += snprintf(buf+n, buflen-n, " },\n");
+    }
+  snprintf(buf+n, buflen-n, " };");
+  return n;
+}
+
+int
 layoutvalues_dump (const layoutvalues_t layoutvalues, int count)
 {
+#if 0
   int i;
   printf("LayoutValues(@%p)\n", layoutvalues);
   for (i = 0; i < count; i++)
@@ -173,6 +200,10 @@ layoutvalues_dump (const layoutvalues_t layoutvalues, int count)
     }
   printf(".\n");
   return 0;
+#endif //0
+  char buf[1024];
+  layoutvalues_str(layoutvalues, count, buf, sizeof(buf));
+  puts(buf);
 }
 
 

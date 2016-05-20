@@ -53,10 +53,7 @@ int test_lb_addr1 ()
   };
   const struct lb_addr_s * obj = lb_addr_decode(testdata, sizeof(testdata));
 
-  printf("lb_addr(@%p) {\n", obj);
-  printf("  lbn=%u, prn=%d\n", obj->lbn, obj->prn);
-  printf("}\n");
-
+  lb_addr_dump(obj);
 }
 
 

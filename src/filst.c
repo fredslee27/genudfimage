@@ -13,11 +13,12 @@
 Naming convention:
 
 _malloc - allocate space from heap, with any relevant count value.
-_free - blindly deallocate.
 _init - constructor, populate from parameters.
 _destroy - destructor, handling free inner members.
-_encode - serialize to UDF binary
+_free - blindly destroy then deallocate.
 _decode - deserialize from UDF binary
+_encode - serialize to UDF binary
+_cmp - comparator
 */
 
 
@@ -47,14 +48,6 @@ path_component_dup (const struct path_component_s * obj)
   memcpy(retval, obj, msize);
   return retval;
 }
-
-/* corresponding free. */
-void
-path_component_free (const struct path_component_s * obj)
-{
-  free((void*)obj);
-}
-
 
 /* Populate instance from parameters. */
 struct path_component_s *
@@ -111,18 +104,11 @@ path_component_make (enum path_component_type_e pctype,
 }
 
 
+/* destroy and deallocate. */
 void
-path_component_dump (const struct path_component_s * obj)
+path_component_free (struct path_component_s * obj)
 {
-  printf("path_component(@%p) = {\n", obj);
-  printf("  ct = %d\n", obj->typ);
-  printf("  cfvn = %d\n", obj->vers);
-  printf("  L_CI = %d\n", obj->len);
-  if (obj->len)
-    printf("  ci = \"%s\"\n", obj->d);
-  else
-    puts("  ci = \"\"");
-  puts("}");
+  free(path_component_destroy(obj));
 }
 
 
@@ -168,6 +154,7 @@ path_component_encode (struct path_component_s * obj, void * space, int spacelen
   return retval;
 }
 
+
 /*
    Comparison between PathComponent, sorting sense.
    Return 0: 1 = a is greater than b
@@ -207,6 +194,38 @@ path_component_cmp (const struct path_component_s * a,
 
   /* still equal, nothing else to compare. */
   return 0;
+}
+
+
+int
+path_component_str (const struct path_component_s *obj,
+		    char buf[],
+		    int buflen)
+{
+  int n = 0;
+  n += snprintf(buf, buflen, "struct path_component_s _%p = {\n\
+  .ct=%d,\n\
+  .cfvn=%d,\n\
+  .L_CI=%d,\n", obj, obj->typ, obj->vers, obj->len);
+  if (obj->len)
+    {
+      n += snprintf(buf+n, buflen-n, "  .ci=\"%s\",\n", obj->d);
+    }
+  else
+    {
+      n += snprintf(buf+n, buflen-n, "  .ci=\"\",\n");
+    }
+  n += snprintf(buf+n, buflen-n, "};");
+  return n;
+}
+
+
+void
+path_component_dump (const struct path_component_s * obj)
+{
+  char buf[512];
+  path_component_str(obj, buf, sizeof(buf));
+  puts(buf);
 }
 
 
@@ -399,10 +418,6 @@ enum tagid_e tagid_enum (unsigned int val)
 
 
 
-
-
-
-
 struct lb_addr_s *
 lb_addr_malloc ()
 {
@@ -429,16 +444,10 @@ lb_addr_destroy (struct lb_addr_s * obj)
   return obj;
 }
 
-int
-lb_addr_encode (struct lb_addr_s * obj, void * space, int spacelen)
+void
+lb_addr_free (struct lb_addr_s * obj)
 {
-  int retval = 0;
-  layoutvalue_t contents[2] = {
-      obj->lbn,
-      obj->prn,
-  };  /* Length implied in layout descriptor. */
-  retval = udf_encode(space, spacelen, udf_lb_addr, contents);
-  return retval;
+  free(lb_addr_destroy(obj));
 }
 
 struct lb_addr_s *
@@ -456,6 +465,18 @@ lb_addr_decode (void * space, int spacelen)
 }
 
 int
+lb_addr_encode (struct lb_addr_s * obj, void * space, int spacelen)
+{
+  int retval = 0;
+  layoutvalue_t contents[2] = {
+      obj->lbn,
+      obj->prn,
+  };  /* Length implied in layout descriptor. */
+  retval = udf_encode(space, spacelen, udf_lb_addr, contents);
+  return retval;
+}
+
+int
 lb_addr_cmp (struct lb_addr_s * a, struct lb_addr_s * b)
 {
   if (a->prn < b->prn) return -1;
@@ -464,5 +485,25 @@ lb_addr_cmp (struct lb_addr_s * a, struct lb_addr_s * b)
   if (a->lbn > b->lbn) return 1;
   return 0;
 }
+
+int
+lb_addr_str (const struct lb_addr_s * obj, char buf[], int buflen)
+{
+  int n = 0;
+  n += snprintf(buf, buflen, "struct lb_addr _%p = {\n\
+  .lbn=%u,\n\
+  .prn=%u,\n\
+};", obj, obj->lbn, obj->prn);
+  return n;
+}
+
+void
+lb_addr_dump (const struct lb_addr_s * obj)
+{
+  char buf[512];
+  lb_addr_str(obj, buf, sizeof(buf));
+  puts(buf);
+}
+
 
 

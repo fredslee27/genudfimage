@@ -13,7 +13,7 @@ test_conv0 ()
   layoutvalue_t contents[5] = { 0, };
   layoutvalue_t expected[5] = { 1, 0, 0, { .ptr=testdata+4 }, 4 };
 
-  int res = udf_decode(testdata, udf_path_component, contents);
+  int res = udf_decode(testdata, sizeof(testdata), udf_path_component, contents);
   int retval = memcmp(contents, expected, sizeof(expected));
 
   printf("test0\n");
@@ -33,7 +33,7 @@ test_conv1 ()
   layoutvalue_t contents[5] = { 0, };
   layoutvalue_t expected[5] = { 5, 6, 0, { .ptr=testdata+4 }, 10 };
 
-  int res = udf_decode(testdata, udf_path_component, contents);
+  int res = udf_decode(testdata, sizeof(testdata), udf_path_component, contents);
   int retval = memcmp(contents, expected, sizeof(expected));
 
   printf("test1\n");
