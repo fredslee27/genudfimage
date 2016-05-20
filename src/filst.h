@@ -1,3 +1,6 @@
+#ifndef _FILST_H_
+#define _FILST_H_
+
 #include <stdint.h>
 
 
@@ -5,6 +8,10 @@
 
 
 #define MAX_COMPONENT_IDENTIFIER_LEN 255
+#define SZ_FSD_LVID 128
+#define SZ_FSD_FSID 32
+#define SZ_FSD_CFID 32
+#define SZ_FSD_AFID 32
 
 
 
@@ -253,3 +260,32 @@ void fid_dump (const struct fid_s *);
 
 
 
+
+/* ECMA-167/3 4/14.1 : File Set Descripor */
+struct fsd_s {
+    struct tag_s tag;	      /* Descriptor Tag */
+    struct timestamp_s rdt;   /* Recording Date and Time. */
+    unsigned int il;	      /* Interchange Level */
+    unsigned int mil;	      /* Maximum Interchange Level */
+    unsigned int csl;	      /* Character Set List */
+    unsigned int mcsl;	      /* Maximum Character Set List */
+    unsigned int fsn;	      /* File Set Number */
+    unsigned int fsdn;	      /* File Set Descriptor Number */
+    struct charspec_s lvidcs; /* Logical Volume Character Set */
+    char lvid[SZ_FSD_LVID+1]; /* Logical Volume Identifier */
+    struct charspec_s fscs;   /* File Set Character Set */
+    char fsid[SZ_FSD_FSID+1]; /* File Set Identifier */
+    char cfid[SZ_FSD_CFID+1]; /* Copyright File Identifier */
+    char afid[SZ_FSD_AFID+1]; /* Abstract File Identifier */
+    struct long_ad_s rdicb;   /* Root ICB */
+    struct regid_s domid;     /* Domain Identifier */
+    struct long_ad_s ne;      /* Next Extent */
+    struct long_ad_s ssdicb;  /* System Stream Directory ICB */
+};
+
+
+
+
+
+
+#endif // _FILST_H_

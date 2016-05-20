@@ -4,8 +4,8 @@
 #include <string.h>
 
 #include "filst.h"
-
-#include "conv.c"
+#include "basics.h"
+#include "conv.h"
 
 
 

@@ -1,3 +1,6 @@
+#ifndef _CONV_H_
+#define _CONV_H_
+
 /* Converter functions, byte-endian sensitive. */
 int uint8_encode (void * space, uint8_t val);
 int uint16_encode (void * space, uint16_t val);
@@ -67,10 +70,10 @@ value-holding structure needs to be as non-complex as feasible.
 
 
 /* ECMA-167/3 4/14.16.1 - Path Component */
-struct layoutfield_s udf_path_component[];
+extern struct layoutfield_s udf_path_component[];
 
 /* ECMA-167/3 4/7.1 - Recorded Address, lb_addr */
-struct layoutfield_s udf_lb_addr[];
+extern struct layoutfield_s udf_lb_addr[];
 
 
 int layoutvalues_dump (const layoutvalues_t layoutvalues, int count);
@@ -80,3 +83,4 @@ int udf_decode (void * raw, int rawlen, layoutdescr_t descr, layoutvalues_t cont
 int udf_encode (void * space, int spacelen, layoutdescr_t descr, layoutvalues_t contents);
 
 
+#endif // _CONV_H_
