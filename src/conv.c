@@ -162,6 +162,7 @@ struct layoutfield_s udf_lb_addr[] = {
 
 
 #include <stdio.h>
+
 int
 layoutvalues_str (const layoutvalues_t layoutvalues, int count, char buf[], int buflen)
 {
@@ -173,7 +174,18 @@ layoutvalues_str (const layoutvalues_t layoutvalues, int count, char buf[], int 
     {
       n += snprintf(buf+n, buflen-n, "  { .word=%lu, .ptr=%p,",
 		    layoutvalues[i].word, layoutvalues[i].ptr);
+#if 0
       if ((i == 3) && (len > 0))
+	{
+	  const char * s = (const char *)(layoutvalues[i].ptr);
+	  n += snprintf(buf+n, buflen-n, " .s=\"%s\"", s);
+	}
+      else
+	{
+	  n += snprintf(buf+n, buflen-n, " .s=%p", layoutvalues[i].ptr);
+	}
+#endif //0
+      if (layoutvalues[i].word > 0xfffffffffUL)  // only on 64b systems.
 	{
 	  const char * s = (const char *)(layoutvalues[i].ptr);
 	  n += snprintf(buf+n, buflen-n, " .s=\"%s\"", s);
