@@ -15,13 +15,9 @@ int test_charspec0 ()
   cs0 = charspec_decode(bindata, sizeof(bindata));
 
 
-  printf("charspec(@%p) {\n", cs0);
-  printf("  type=%d, info=\"%s\"\n", cs0->cst, cs0->csi);
-  printf("}\n");
+  charspec_dump(cs0);
 
-  printf("charspec(@%p) {\n", (&expected));
-  printf("  type=%d, info=\"%s\"\n", (&expected)->cst, (&expected)->csi);
-  printf("}\n");
+  charspec_dump(&expected);
 
   int retval = charspec_cmp(&expected, cs0);
   printf(" ==> %d\n", retval);
@@ -48,17 +44,9 @@ int test_timestamp0 ()
   struct timestamp_s * ts0;
   ts0 = timestamp_decode(bindata, sizeof(bindata));
 
-  printf("timestamp(@%p) = {\n", ts0);
-  printf(" type=%d, tz=%d\n", ts0->typ, ts0->tz);
-  printf(" year=%d, mon=%u, day=%u\n", ts0->year, ts0->month, ts0->day);
-  printf(" %02u:%02u:%02u.%06u\n", ts0->hour, ts0->min, ts0->sec, ts0->usec);
-  printf("}\n");
+  timestamp_dump(ts0);
 
-  printf("timestamp(@%p) = {\n", (&expected));
-  printf(" type=%d, tz=%d\n", (&expected)->typ, (&expected)->tz);
-  printf(" year=%d, mon=%u, day=%u\n", (&expected)->year, (&expected)->month, (&expected)->day);
-  printf(" %02u:%02u:%02u.%06u\n", (&expected)->hour, (&expected)->min, (&expected)->sec, (&expected)->usec);
-  printf("}\n");
+  timestamp_dump(&expected);
 
   int retval = timestamp_cmp(&expected, ts0);
   printf(" ==> %d\n", retval);
@@ -83,15 +71,9 @@ int test_regid0 ()
   struct regid_s * regid0;
   regid0 = regid_decode(bindata, sizeof(bindata));
 
-  printf("regid@%p = {\n", regid0);
-  printf("  flags = %c%c\n",
-	 regid0->flags.dirty ? 'D' : 'd',
-	 regid0->flags.protected ? 'P' : 'p');
-  printf("  id = \"%s\"\n", regid0->id);
-  printf("  suffix = { %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x }\n", 
-	 regid0->suffix[0], regid0->suffix[1], regid0->suffix[2], regid0->suffix[3],
-	 regid0->suffix[4], regid0->suffix[5], regid0->suffix[6], regid0->suffix[7]);
-  printf("}\n");
+  regid_dump(regid0);
+
+  regid_dump(&expected);
 
   int retval = regid_cmp(&expected, regid0);
   printf(" ==> %d\n", retval);

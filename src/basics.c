@@ -80,7 +80,9 @@ struct charspec_s * charspec_init (struct charspec_s *,
 void charspec_free (struct charspec_s *);
 struct charspec_s * charspec_decode (void * raw, int rawlen);
 int charspec_encode (struct charspec_s *, void * raw, int rawlen);
-int charspec_cmp ( const struct charspec_s *, const struct charspec_s *);
+int charspec_cmp (const struct charspec_s *, const struct charspec_s *);
+int charspec_str (const struct charspec_s *, char[], int);
+void charspec_dump (const struct charspec_s *);
 
 
 struct timestamp_s * timestamp_malloc ();
@@ -104,6 +106,8 @@ void timestamp_free (struct timestamp_s *);
 struct timestamp_s * timestamp_decode (void * raw, int rawlen);
 int timestamp_encode (struct timestamp_s *, void * raw, int rawlen);
 int timestamp_cmp (const struct timestamp_s *, const struct timestamp_s *);
+int timestamp_str (const struct timestamp_s *, char[], int);
+void timestamp_dump (const struct timestamp_s *);
 
 
 struct regid_s * regid_malloc ();
@@ -113,6 +117,8 @@ void regid_free (struct regid_s *);
 struct regid_s * regid_decode (void * raw, int rawlen);
 int regid_encode (struct regid_s *, void * raw, int rawlen);
 int regid_cmp (const struct regid_s *, const struct regid_s *);
+int regid_str (const struct regid_s *, char[], int);
+void regid_dump (const struct regid_s *);
 
 
 
@@ -172,6 +178,26 @@ charspec_cmp (const struct charspec_s * a, const struct charspec_s * b)
   if (a->cst > b->cst) return 1;
   return memcmp(a->csi, b->csi, SZ_CHARSPEC_CSI);
 }
+
+int
+charspec_str (const struct charspec_s * obj, char buf[], int buflen)
+{
+  int n = 0;
+  n += snprintf(buf+n, buflen-n, "struct charspec_s _%p = {\n", obj);
+  n += snprintf(buf+n, buflen-n, "  .cst=%d,\n", obj->cst);
+  n += snprintf(buf+n, buflen-n, "  .csi=\"%s\",\n", obj->csi);
+  n += snprintf(buf+n, buflen-n, "};");
+  return n;
+}
+
+void
+charspec_dump (const struct charspec_s * obj)
+{
+  char buf[512];
+  charspec_str(obj, buf, sizeof(buf));
+  puts(buf);
+}
+
 
 
 
@@ -335,10 +361,37 @@ timestamp_encode (struct timestamp_s *obj, void * raw, int rawlen)
   return ofs;
 }
 
-int timestamp_cmp (const struct timestamp_s *a, const struct timestamp_s *b)
+int
+timestamp_cmp (const struct timestamp_s *a, const struct timestamp_s *b)
 {
   // TODO: time comparison.
   return memcmp(a, b, sizeof(struct timestamp_s));
+}
+
+int
+timestamp_str (const struct timestamp_s *obj, char buf[], int buflen)
+{
+  int n = 0;
+  n += snprintf(buf+n, buflen-n, "struct timestamp_s _%p = {\n", obj);
+  n += snprintf(buf+n, buflen-n, "  .typ = %u\n", obj->typ);
+  n += snprintf(buf+n, buflen-n, "  .tz = %d\n", obj->tz);
+  n += snprintf(buf+n, buflen-n, "  .year = %d\n", obj->year);
+  n += snprintf(buf+n, buflen-n, "  .month = %u\n", obj->month);
+  n += snprintf(buf+n, buflen-n, "  .day = %u\n", obj->day);
+  n += snprintf(buf+n, buflen-n, "  .hour = %u\n", obj->hour);
+  n += snprintf(buf+n, buflen-n, "  .min = %u\n", obj->min);
+  n += snprintf(buf+n, buflen-n, "  .sec = %u\n", obj->sec);
+  n += snprintf(buf+n, buflen-n, "  .usec = %u\n", obj->usec);
+  n += snprintf(buf+n, buflen-n, "};");
+  return n;
+}
+
+void
+timestamp_dump (const struct timestamp_s *obj)
+{
+  char buf[512];
+  timestamp_str(obj, buf, sizeof(buf));
+  puts(buf);
 }
 
 
@@ -404,5 +457,29 @@ regid_cmp (const struct regid_s *a, const struct regid_s *b)
   // TODO: comparison between regid
   return memcmp(a, b, sizeof(*a));
 }
+
+int
+regid_str (const struct regid_s *obj, char buf[], int buflen)
+{
+  int n = 0;
+  n += snprintf(buf+n, buflen-n, "struct regid_s _%p = {\n", obj);
+  n += snprintf(buf+n, buflen-n, "  .flags = { .dirty=%u, .protected=%u },\n",
+		obj->flags.dirty, obj->flags.protected);
+  n += snprintf(buf+n, buflen-n, "  .id = \"%s\",\n", obj->id);
+  n += snprintf(buf+n, buflen-n, "  .suffix = { %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x },\n",
+		obj->suffix[0], obj->suffix[1], obj->suffix[2], obj->suffix[3],
+		obj->suffix[4], obj->suffix[5], obj->suffix[6], obj->suffix[7]);
+  n += snprintf(buf+n, buflen-n, "};");
+  return n;
+}
+
+void
+regid_dump (const struct regid_s *obj)
+{
+  char buf[512];
+  regid_str(obj, buf, sizeof(buf));
+  puts(buf);
+}
+
 
 
