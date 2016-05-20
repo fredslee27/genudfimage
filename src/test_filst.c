@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "filst.c"
 
 
@@ -43,9 +45,26 @@ int test_pn1 ()
 }
 
 
+int test_lb_addr1 ()
+{
+  uint8_t testdata[6] = {
+    0x23, 0x74, 0x01, 0x00,
+    0x02, 0x00,
+  };
+  const struct lb_addr_s * obj = lb_addr_decode(testdata, sizeof(testdata));
+
+  printf("lb_addr(@%p) {\n", obj);
+  printf("  lbn=%u, prn=%d\n", obj->lbn, obj->prn);
+  printf("}\n");
+
+}
+
+
 int main ()
 {
   test_pc1();
+  test_pn1();
+  test_lb_addr1();
   return 0;
 }
 

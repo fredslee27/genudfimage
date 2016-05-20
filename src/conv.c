@@ -84,11 +84,11 @@ int bytestr_encode (const uint8_t * src, int srclen, void * space, int spacelen)
   return n;
 }
 
-uint8_t * bytestr_decode (uint8_t * src, int srclen, const void * space, int spacelen)
+uint8_t * bytestr_decode (uint8_t * dst, int dstlen, const void * space, int spacelen)
 {
-  int n = (srclen < spacelen) ? srclen : spacelen;  // min(srclen, spacelen)
-  memcpy(src, space, n);
-  return src;
+  int n = (dstlen < spacelen) ? dstlen : spacelen;  // min(dstlen, spacelen)
+  memcpy(dst, space, n);
+  return dst;
 }
 
 
@@ -154,6 +154,10 @@ struct layoutfield_s udf_path_component[] = {
   { (1<<1), 4, 0, LAYOUT_END },
 };
 
+struct layoutfield_s udf_lb_addr[] = {
+  { 0x00, 0, "lbn", LAYOUT_UINT32 },
+  { 0x00, 4, "prn", LAYOUT_UINT16 },
+};
 
 
 
@@ -203,7 +207,7 @@ _resolve_bp (const layoutdescr_t descr, const layoutvalues_t contents, int fldid
 
 
 int
-udf_decode (void * raw, layoutdescr_t descr, layoutvalues_t contents)
+udf_decode (void * raw, int rawlen, layoutdescr_t descr, layoutvalues_t contents)
 {
   uint8_t * udfbytes = (uint8_t*)raw;
   int fldidx = 0;
@@ -237,6 +241,11 @@ udf_decode (void * raw, layoutdescr_t descr, layoutvalues_t contents)
       bp += vbp;
 #endif //0
       bp = _resolve_bp(descr, contents, fldidx);
+      if (bp >= rawlen)
+	{
+	  complete = 1;
+	  break;
+	}
 
       switch (fld->fldtype)
         {

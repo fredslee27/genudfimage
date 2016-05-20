@@ -2,8 +2,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <filst.h>
 
+#include "filst.h"
 
 #include "conv.c"
 
@@ -135,7 +135,7 @@ path_component_decode (void * space, int spacelen)
   struct path_component_s * obj;
   layoutvalue_t contents[5] = { 0, };
 
-  udf_decode(space, udf_path_component, contents);
+  udf_decode(space, spacelen, udf_path_component, contents);
 
   obj = path_component_malloc(contents[1].word);
   obj->raw = space;
@@ -166,6 +166,47 @@ path_component_encode (struct path_component_s * obj, void * space, int spacelen
   retval = 4 + obj->len;
 
   return retval;
+}
+
+/*
+   Comparison between PathComponent, sorting sense.
+   Return 0: 1 = a is greater than b
+            -1 = a is less than b
+             0 = a is equal to b
+*/
+int
+path_component_cmp (const struct path_component_s * a,
+		    const struct path_component_s * b)
+{
+  int ia, ib;
+  const char *pa, *pb;
+
+  /* if one is empty. */
+  if ((a->len == 0) && (b->len > 0))
+    return -1;
+  if ((a->len > 0) && (b->len == 0))
+    return 1;
+  ia = ib = 0;
+  pa = a->d;
+  pb = b->d;
+  while ((ia < a->len) && (ib < b->len))
+    {
+      pa = a->d + ia;
+      pb = b->d + ib;
+      if (*pa < *pb) return -1;  /* asciibetically lesser. */
+      if (*pa > *pb) return 1;  /* asciibetically greater. */
+      /* Still equal; proceed to next. */
+      ia++; ib++;
+    }
+  /* One or both ended. */
+  if (a->len < b->len) return -1;  /* a is shorter -> lesser. */
+  if (a->len > b->len) return 1;  /* a is longer -> greater. */
+  /* equal content, equal length.  Compare versions. */
+  if (a->vers < b->vers) return -1;  /* a is older -> lesser. */
+  if (a->vers > b->vers) return 1;  /* a is newer -> greater. */
+
+  /* still equal, nothing else to compare. */
+  return 0;
 }
 
 
@@ -372,13 +413,11 @@ lb_addr_malloc ()
 
 struct lb_addr_s *
 lb_addr_init (struct lb_addr_s * obj,
-              unsigned int extenttype,
               unsigned int lbn,
               unsigned int prn)
 {
   if (!obj)
     return obj;
-  obj->et = extenttype;
   obj->lbn = lbn;
   obj->prn = prn;
   return obj;
@@ -393,10 +432,37 @@ lb_addr_destroy (struct lb_addr_s * obj)
 int
 lb_addr_encode (struct lb_addr_s * obj, void * space, int spacelen)
 {
+  int retval = 0;
+  layoutvalue_t contents[2] = {
+      obj->lbn,
+      obj->prn,
+  };  /* Length implied in layout descriptor. */
+  retval = udf_encode(space, spacelen, udf_lb_addr, contents);
+  return retval;
 }
 
 struct lb_addr_s *
 lb_addr_decode (void * space, int spacelen)
 {
+  struct lb_addr_s * retval = NULL;
+  layoutvalue_t contents[2] = { 0, };
+
+  udf_decode(space, spacelen, udf_lb_addr, contents);
+
+  retval = lb_addr_malloc();
+  retval->lbn = contents[0].word;
+  retval->prn = contents[1].word;
+  return retval;
 }
+
+int
+lb_addr_cmp (struct lb_addr_s * a, struct lb_addr_s * b)
+{
+  if (a->prn < b->prn) return -1;
+  if (a->prn > b->prn) return 1;
+  if (a->lbn < b->lbn) return -1;
+  if (a->lbn > b->lbn) return 1;
+  return 0;
+}
+
 

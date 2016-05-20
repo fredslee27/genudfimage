@@ -53,14 +53,15 @@ struct pathname_s {
 
 
 enum extent_type_e {
-    EXTENTTYPE_0,
-    EXTENTTYPE_1,
-    EXTENTTYPE_2,
-    EXTENTTYPE_3,
+    EXTENTTYPE_USED,
+    EXTENTTYPE_READY,
+    EXTENTTYPE_FREE,
+    EXTENTTYPE_NEXT,
 };
 
+
 struct lb_addr_s {
-    unsigned int et;    /* Extent Type */
+    enum extent_type_e et;  /* Extent Type */
     unsigned int lbn;   /* Logical Block Number */
     unsigned int prn;   /* Partition Reference Number */
 };
@@ -68,7 +69,6 @@ struct lb_addr_s {
 struct lb_addr_s * lb_addr_malloc ();
 
 struct lb_addr_s * lb_addr_init (struct lb_addr_s * obj,
-                                 unsigned int extenttype,
                                  unsigned int lbn,
                                  unsigned int prn);
 struct lb_addr_s * lb_addr_destroy (struct lb_addr_s * obj);
