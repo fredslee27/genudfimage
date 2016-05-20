@@ -10,6 +10,7 @@
 
 /* Part 1 "basic" structures */
 
+
 #define SZ_CHARSPEC_CSI 63
 #define SZ_REGID_ID 23
 #define SZ_REGID_SUFFIX 8
@@ -58,11 +59,25 @@ struct regid_s {
 
 
 
+
+/*
+   Methods pattern:
+   * malloc(int?) - allocate instance on heap with relevant size parameter.
+   * destroy() - release internal memory allocations; instance must be explicity freed().
+   * init(...) - populate instance from parameters.
+   * free(...) - release and deallocate instance.
+   * decode(...) - populate instance from UDF binary.
+   * encode(...) - fill UDF binary from instance.
+   * cmp(a,b) - comparator (lt=-1, eq=0, gt=1).
+
+*/
+
 struct charspec_s * charspec_malloc ();
 struct charspec_s * charspec_destroy (struct charspec_s *);
 struct charspec_s * charspec_init (struct charspec_s *,
 				   unsigned int charset_type,
 				   const char * charset_info);
+void charspec_free (struct charspec_s *);
 struct charspec_s * charspec_decode (void * raw, int rawlen);
 int charspec_encode (struct charspec_s *, void * raw, int rawlen);
 int charspec_cmp ( const struct charspec_s *, const struct charspec_s *);
@@ -85,6 +100,7 @@ struct timestamp_s * timestamp_from_time (struct timestamp_s *,
 struct timestamp_s * timestamp_from_timeval (struct timestamp_s *,
 					     const struct timeval *,
 					     const struct timezone *);
+void timestamp_free (struct timestamp_s *);
 struct timestamp_s * timestamp_decode (void * raw, int rawlen);
 int timestamp_encode (struct timestamp_s *, void * raw, int rawlen);
 int timestamp_cmp (const struct timestamp_s *, const struct timestamp_s *);
@@ -93,6 +109,7 @@ int timestamp_cmp (const struct timestamp_s *, const struct timestamp_s *);
 struct regid_s * regid_malloc ();
 struct regid_s * regid_destroy (struct regid_s *);
 struct regid_s * regid_init (struct regid_s *, const char * id);
+void regid_free (struct regid_s *);
 struct regid_s * regid_decode (void * raw, int rawlen);
 int regid_encode (struct regid_s *, void * raw, int rawlen);
 int regid_cmp (const struct regid_s *, const struct regid_s *);
@@ -120,6 +137,12 @@ charspec_init (struct charspec_s * obj, unsigned int charset_type, const char * 
 {
   obj->cst = charset_type;
   strncpy(obj->csi, charset_info, 63);
+}
+
+void
+charspec_free (struct charspec_s *obj)
+{
+  free(charspec_destroy(obj));
 }
 
 struct charspec_s *
@@ -230,6 +253,12 @@ timestamp_from_timeval (struct timestamp_s *obj,
   return obj;
 }
 
+void
+timestamp_free (struct timestamp_s *obj)
+{
+  free(timestamp_destroy(obj));
+}
+
 struct timestamp_s *
 timestamp_decode (void * raw, int rawlen)
 {
@@ -338,6 +367,12 @@ regid_init (struct regid_s *obj, const char * id)
   strncpy(obj->id, id, sizeof(obj->id));
 
   return obj;
+}
+
+void
+regid_free (struct regid_s *obj)
+{
+  free(regid_destroy(obj));
 }
 
 struct regid_s *
