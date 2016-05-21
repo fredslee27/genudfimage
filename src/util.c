@@ -35,3 +35,35 @@ reindent_repr (char *buf, int buflen, int indentdepth)
   return n;
 }
 
+
+int
+hexdump (uint8_t *bin, int binlen)
+{
+  int n, x, y;
+  uint8_t * row;
+
+  y = 0;
+  row = bin + 0;
+  while (y*16 < binlen)
+    {
+      row = bin + (y*16);
+      n = (y*16);
+      printf("%08X | ", (y*16));
+      for (x = 0; (x < 16) && (y*16+x < binlen); x++)
+	{
+	  printf("%02X ", bin[y*16+x]);
+	}
+      printf("| ");
+      for (x = 0; (x < 16) && (y*16+x < binlen); x++)
+	{
+	  int ch = bin[y*16+x];
+	  if ((ch < 32) || (ch >= 127))
+	    ch = '.';
+	  printf("%c", ch);
+	}
+      printf("\n");
+      y += 1;
+    }
+  return 0;
+}
+

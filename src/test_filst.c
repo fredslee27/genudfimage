@@ -100,12 +100,28 @@ int test_fsd1 ()
 
 int test_fsd2 ()
 {
-  uint8_t bindata[512];
+  uint8_t testdata[512];
   struct fsd_s * fsd0;
 
   fsd0 = fsd_malloc();
 
   fsd_dump(fsd0);
+
+  return -1;
+}
+
+int test_fsd3 ()
+{
+  uint8_t bindata[512] = { 0, };
+  struct fsd_s * fsd0;
+
+  fsd0 = fsd_malloc();
+  fsd0->il = 2;
+  fsd0->mil = 3;
+  fsd_encode(fsd0, bindata, sizeof(bindata));
+
+  printf("fsd %p:\n", fsd0);
+  hexdump(bindata, sizeof(bindata));
 
   return -1;
 }
@@ -117,7 +133,7 @@ int main ()
   test_pn1();
   test_lb_addr1();
   test_fid1();
-  test_fsd2();
+  test_fsd3();
   return 0;
 }
 
