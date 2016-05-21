@@ -1,8 +1,10 @@
 #include <stdio.h>
 
-#include "basics.h"
-#include "filst.c"
+#include "util.c"
+#include "basics.c"
+#include "conv.c"
 
+#include "filst.c"
 
 
 /* Path Component. */

@@ -1,5 +1,6 @@
 #include <string.h>
 
+#include "basics.c"
 #include "conv.c"
 
 
