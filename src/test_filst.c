@@ -116,10 +116,12 @@ int test_fsd3 ()
   struct fsd_s * fsd0;
 
   fsd0 = fsd_malloc();
+  fsd0->tag.tagid = TAGID_FSD;
   fsd0->il = 2;
   fsd0->mil = 3;
   fsd_encode(fsd0, bindata, sizeof(bindata));
 
+  fsd_dump(fsd0);
   printf("fsd %p:\n", fsd0);
   hexdump(bindata, sizeof(bindata));
 

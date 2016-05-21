@@ -496,13 +496,15 @@ lb_addr_decode (void * space, int spacelen)
 }
 
 int
-lb_addr_encode (struct lb_addr_s * obj, void * space, int spacelen)
+lb_addr_encode (const struct lb_addr_s * obj, void * space, int spacelen)
 {
   int retval = 0;
-  layoutvalue_t contents[2] = {
-      obj->lbn,
-      obj->prn,
-  };  /* Length implied in layout descriptor. */
+  layoutvalue_t contents[3] = { 0, };
+
+  contents[0].word = obj->lbn;
+  contents[1].word = obj->prn;
+  contents[2].word = 6;
+
   retval = udf_encode(space, spacelen, udf_lb_addr, contents);
   return retval;
 }
@@ -542,6 +544,18 @@ lb_addr_dump (const struct lb_addr_s * obj)
 
 
 
+struct layoutfield_s udf_tag[] = {
+    { 0, 0, "tagid", LAYOUT_UINT16 },
+    { 0, 2, "vers", LAYOUT_UINT16 },
+    { 0, 4, "checksum", LAYOUT_UINT16 },
+    { 0, 5, "reserved", LAYOUT_RESERVED },
+    { 0, 6, "serial", LAYOUT_UINT16 },
+    { 0, 8, "crc", LAYOUT_UINT16 },
+    { 0, 10, "crclen", LAYOUT_UINT16 },
+    { 0, 12, "tagloc", LAYOUT_UINT32 },
+    { 0, 16, 0, LAYOUT_END },
+};
+
 struct tag_s *
 tag_init (struct tag_s * obj, enum tagid_e tagid, unsigned int version, unsigned int serial, unsigned int tagloc)
 {
@@ -564,6 +578,47 @@ tag_check_sum (struct tag_s * obj)
   // sum byte0 and byte1, subtracting overflow of byte2.
   accum = ((accum >> 8) & 0xff) + (accum & 0xff) - (accum >> 16);
   unsigned int retval = accum & 0xff;
+  return retval;
+}
+
+struct tag_s *
+tag_decode (struct tag_s * obj, int8_t * raw, int rawlen)
+{
+  layoutvalue_t contents[8] = { 0, };
+  if (!obj) obj = malloc(sizeof(*obj));
+  memset(obj, 0, sizeof(*obj));
+
+  int n = udf_decode(raw, rawlen, udf_tag, contents);
+  obj->tagid = tagid_enum(contents[0].word);
+  obj->vers = contents[1].word;
+  obj->checksum = contents[2].word;
+  obj->serial = contents[4].word;
+  obj->crc = contents[5].word;
+  obj->crclen = contents[6].word;
+  obj->tagloc = contents[7].word;
+  unsigned int declen = contents[8].word;
+
+  return obj;
+}
+
+int
+tag_encode (const struct tag_s * obj, uint8_t * raw, int rawlen)
+{
+  layoutvalue_t contents[9] = { 0, };
+  if (!obj) return 0;
+
+  contents[0].word = tagid_int(obj->tagid);
+  contents[1].word = obj->vers;
+  contents[2].word = obj->checksum;
+//  contents[3].word = reserved;
+  contents[4].word = obj->serial;
+  contents[5].word = obj->crc;
+  contents[6].word = obj->crclen;
+  contents[7].word = obj->tagloc;
+  contents[8].word = 16;
+
+  int retval = udf_encode(raw, rawlen, udf_tag, contents);
+
   return retval;
 }
 
@@ -799,7 +854,7 @@ long_ad_decode (uint8_t * raw, int rawlen)
 {
   struct long_ad_s * obj;
   obj = long_ad_malloc();
-  layoutvalue_t contents[3] = { 0, };
+  layoutvalue_t contents[4] = { 0, };
 
   udf_decode(raw, rawlen, udf_long_ad, contents);
 
@@ -816,11 +871,16 @@ long_ad_decode (uint8_t * raw, int rawlen)
 int
 long_ad_encode (const struct long_ad_s *obj, uint8_t raw[], int rawlen)
 {
-  layoutvalue_t contents[3] = { 0, };
+  layoutvalue_t contents[4] = { 0, };
+  uint8_t loc[6];
+//  uint8_t impuse[6];
+
+  lb_addr_encode(&(obj->loc), loc, sizeof(loc));
 
   contents[0].word = obj->len;
-  contents[1].ptr = (void*)&(obj->loc);
+  contents[1].ptr = loc;
   contents[2].ptr = (void*)&(obj->impuse);
+  contents[3].word = 16;
 
   int res = udf_encode(raw, rawlen, udf_long_ad, contents);
   return res;
@@ -1009,6 +1069,28 @@ fid_dump (const struct fid_s *obj)
 
 
 
+struct layoutfield_s udf_fsd[] = {
+    { 0, 0, "tag", LAYOUT_PTR },
+    { 0, 16, "rdt", LAYOUT_PTR },
+    { 0, 28, "il", LAYOUT_UINT16 },
+    { 0, 30, "mil", LAYOUT_UINT16 },
+    { 0, 32, "csl", LAYOUT_UINT32 },
+    { 0, 36, "mcsl", LAYOUT_UINT32 },
+    { 0, 40, "fsn", LAYOUT_UINT32 },
+    { 0, 44, "fsdn", LAYOUT_UINT32 },
+    { 0, 112, "lvidcs", LAYOUT_PTR },
+    { 0, 240, "lvid", LAYOUT_PTR },
+    { 0, 304, "fscs", LAYOUT_PTR },
+    { 0, 336, "fsid", LAYOUT_PTR },
+    { 0, 368, "cfid", LAYOUT_PTR },
+    { 0, 400, "afid", LAYOUT_PTR },
+    { 0, 416, "rdicb", LAYOUT_PTR },
+    { 0, 448, "domid", LAYOUT_PTR },
+    { 0, 464, "ne",LAYOUT_PTR },
+    { 0, 480, "ssdicb", LAYOUT_PTR },
+    { 0, 480, "reserved", LAYOUT_RESERVED },
+    { 0, 512, 0, LAYOUT_END },
+};
 #define SELF struct fsd_s *obj
 
 #define INSTFORM_fsd_const(args...) (const struct fsd_s *obj, ##args)
@@ -1054,6 +1136,64 @@ fsd_decode (struct fsd_s *obj, const uint8_t * raw, int rawlen)
 int
 fsd_encode (const struct fsd_s *obj, uint8_t * raw, int rawlen)
 {
+  layoutvalue_t contents[19] = { 0, };
+
+  uint8_t tag[16];
+  uint8_t rdt[12];
+  uint8_t lvidcs[64];
+  uint8_t lvid[128];
+  uint8_t fscs[64];
+  uint8_t fsid[32];
+  uint8_t cfid[32];
+  uint8_t afid[32];
+  uint8_t rdicb[16];
+  uint8_t domid[32];
+  uint8_t ne[16];
+  uint8_t ssdicb[16];
+
+  tag_encode(&(obj->tag), tag, sizeof(tag));
+  timestamp_encode(&(obj->rdt), rdt, sizeof(rdt));
+  charspec_encode(&(obj->lvidcs), lvidcs, sizeof(lvidcs));
+  dstring_encode(&(obj->lvid), lvid, sizeof(lvid));
+  charspec_encode(&(obj->fscs), fscs, sizeof(fscs));
+  dstring_encode(&(obj->fsid), fsid, sizeof(fsid));
+  dstring_encode(&(obj->cfid), cfid, sizeof(cfid));
+  dstring_encode(&(obj->afid), afid, sizeof(afid));
+  long_ad_encode(&(obj->rdicb), rdicb, sizeof(rdicb));
+  regid_encode(&(obj->domid), domid, sizeof(domid));
+  long_ad_encode(&(obj->ne), ne, sizeof(ne));
+  long_ad_encode(&(obj->ssdicb), ssdicb, sizeof(ssdicb));
+
+  printf("/* domain identifier */\n");
+  hexdump(domid, sizeof(domid));
+  printf("/**/\n");
+  printf("/* next_extent */\n");
+  hexdump(ne, sizeof(ne));
+  printf("/**/\n");
+
+  contents[0].ptr = tag;
+  contents[1].ptr = rdt;
+  contents[2].word = obj->il;
+  contents[3].word = obj->mil;
+  contents[4].word = obj->csl;
+  contents[5].word = obj->mcsl;
+  contents[6].word = obj->fsn;
+  contents[7].word = obj->fsdn;
+  contents[8].ptr = lvidcs;
+  contents[9].ptr = lvid;
+  contents[10].ptr = fscs;
+  contents[11].ptr = fsid;
+  contents[12].ptr = cfid;
+  contents[13].ptr = afid;
+  contents[14].ptr = rdicb;
+  contents[15].ptr = domid;
+  contents[16].ptr = ne;
+  contents[17].ptr = ssdicb;
+  contents[18].word = 512;
+
+  int retval = udf_encode(raw, rawlen, udf_fsd, contents);
+
+  return retval;
 }
 
 int

@@ -82,7 +82,7 @@ struct lb_addr_s * lb_addr_init (struct lb_addr_s * obj,
 struct lb_addr_s * lb_addr_destroy (struct lb_addr_s * obj);
 void lb_addr_free (struct lb_addr_s * obj);
 struct lb_addr_s * lb_addr_decode (void * space, int spacelen);
-int lb_addr_encode (struct lb_addr_s * obj, void * space, int spacelen);
+int lb_addr_encode (const struct lb_addr_s * obj, void * space, int spacelen);
 int lb_addr_repr (const struct lb_addr_s *, char[], int);
 void lb_addr_dump (const struct lb_addr_s *);
 
