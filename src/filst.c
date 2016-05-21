@@ -557,6 +557,18 @@ struct layoutfield_s udf_tag[] = {
 };
 
 struct tag_s *
+tag_malloc ()
+{
+  return (struct tag_s*)malloc(sizeof(struct tag_s));
+}
+
+struct tag_s *
+tag_destroy (struct tag_s * obj)
+{
+  return obj;
+}
+
+struct tag_s *
 tag_init (struct tag_s * obj, enum tagid_e tagid, unsigned int version, unsigned int serial, unsigned int tagloc)
 {
   if (!obj) return obj;
@@ -565,6 +577,12 @@ tag_init (struct tag_s * obj, enum tagid_e tagid, unsigned int version, unsigned
   obj->vers = version;
   obj->serial = serial;
   obj->tagloc = tagloc;
+}
+
+void
+tag_free (struct tag_s * obj)
+{
+  free(tag_destroy(obj));
 }
 
 unsigned int
@@ -582,8 +600,10 @@ tag_check_sum (struct tag_s * obj)
 }
 
 struct tag_s *
-tag_decode (struct tag_s * obj, int8_t * raw, int rawlen)
+tag_decode (const uint8_t * raw, int rawlen)
 {
+  struct tag_s * obj = NULL;
+
   layoutvalue_t contents[8] = { 0, };
   if (!obj) obj = malloc(sizeof(*obj));
   memset(obj, 0, sizeof(*obj));
@@ -1131,12 +1151,74 @@ fsd_free (struct fsd_s *obj)
 struct fsd_s *
 fsd_decode (struct fsd_s *obj, const uint8_t * raw, int rawlen)
 {
+  layoutvalue_t contents[20] = { 0, };
+
+  udf_decode(raw, rawlen, udf_fsd, contents);
+
+  struct tag_s * tag = tag_decode(contents[0].ptr, 16);
+  obj->tag = *tag;
+  tag_free(tag);
+
+  struct timestamp_s * rdt = timestamp_decode(contents[1].ptr, 12);
+  obj->rdt = *rdt;
+  timestamp_free(rdt);
+
+  obj->il = contents[2].word;
+  obj->mil = contents[3].word;
+  obj->csl = contents[4].word;
+  obj->mcsl = contents[5].word;
+  obj->fsn = contents[6].word;
+  obj->fsdn = contents[7].word;
+
+  struct charspec_s * lvidcs = charspec_decode(contents[8].ptr, 64);
+  obj->lvidcs = *lvidcs;
+  charspec_free(lvidcs);
+
+  struct dstring_s * lvid = dstring_decode(contents[9].ptr, 128);
+  obj->lvid = *lvid;
+  dstring_free(lvid);
+
+  struct charspec_s * fscs = charspec_decode(contents[10].ptr, 64);
+  obj->fscs = *fscs;
+  charspec_free(fscs);
+
+  struct dstring_s * fsid = dstring_decode(contents[11].ptr, 32);
+  obj->fsid = *fsid;
+  dstring_free(fsid);
+
+  struct dstring_s * cfid = dstring_decode(contents[12].ptr, 32);
+  obj->cfid = *fsid;
+  dstring_free(cfid);
+
+  struct dstring_s * afid = dstring_decode(contents[13].ptr, 32);
+  obj->afid = *fsid;
+  dstring_free(afid);
+
+  struct long_ad_s * rdicb = long_ad_decode(contents[14].ptr, 16);
+  obj->rdicb = *rdicb;
+  long_ad_free(rdicb);
+
+  struct regid_s * domid = regid_decode(contents[15].ptr, 32);
+  obj->domid = *domid;
+  regid_free(domid);
+
+  struct long_ad_s * ne = long_ad_decode(contents[16].ptr, 16);
+  obj->ne = *ne;
+  long_ad_free(ne);
+
+  struct long_ad_s * ssdicb = long_ad_decode(contents[17].ptr, 16);
+  obj->ssdicb = *ssdicb;
+  long_ad_free(ssdicb);
+
+  /* TODO: make sure reserved is #00. */
+
+  return obj;
 }
 
 int
 fsd_encode (const struct fsd_s *obj, uint8_t * raw, int rawlen)
 {
-  layoutvalue_t contents[19] = { 0, };
+  layoutvalue_t contents[20] = { 0, };
 
   uint8_t tag[16];
   uint8_t rdt[12];
@@ -1199,6 +1281,9 @@ fsd_encode (const struct fsd_s *obj, uint8_t * raw, int rawlen)
 int
 fsd_cmp (const struct fsd_s *a, const struct fsd_s *b)
 {
+  /* TODO: better compare. */
+  int retval = memcmp(a, b, sizeof(*a));
+  return retval;
 }
 
 int

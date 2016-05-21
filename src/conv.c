@@ -206,7 +206,7 @@ _resolve_bp (const layoutdescr_t descr, const layoutvalues_t contents, int fldid
 
 
 int
-udf_decode (void * raw, int rawlen, layoutdescr_t descr, layoutvalues_t contents)
+udf_decode (const void * raw, int rawlen, layoutdescr_t descr, layoutvalues_t contents)
 {
   uint8_t * udfbytes = (uint8_t*)raw;
   int fldidx = 0;

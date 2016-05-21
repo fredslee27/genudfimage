@@ -202,12 +202,17 @@ unsigned int tagid_int (enum tagid_e);
 /* Given value used in UDF binary, yield enum. */
 enum tagid_e tagid_enum (unsigned int);
 
+struct tag_s * tag_malloc ();
+struct tag_s * tag_destroy (struct tag_s *);
 struct tag_s * tag_init (struct tag_s *,
 			 enum tagid_e tagid,
 			 unsigned int vers,
 			 unsigned int serial,
 			 unsigned int tagloc);
+void tag_free (struct tag_s *);
 unsigned int tag_check_sum (struct tag_s *);
+struct tag_s * tag_decode (const uint8_t *, int);
+int tag_encode (const struct tag_s *, uint8_t *, int);
 int tag_repr (const struct tag_s *, char[], int);
 void tag_dump (const struct tag_s *);
 
