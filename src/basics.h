@@ -104,7 +104,7 @@ struct charspec_s * charspec_init (struct charspec_s *,
 				   const char * charset_info);
 void charspec_free (struct charspec_s *);
 struct charspec_s * charspec_decode (void * raw, int rawlen);
-int charspec_encode (struct charspec_s *, void * raw, int rawlen);
+int charspec_encode (const struct charspec_s *, void * raw, int rawlen);
 int charspec_cmp (const struct charspec_s *, const struct charspec_s *);
 int charspec_repr (const struct charspec_s *, char[], int);
 void charspec_dump (const struct charspec_s *);
@@ -129,7 +129,7 @@ struct timestamp_s * timestamp_from_timeval (struct timestamp_s *,
 					     const struct timezone *);
 void timestamp_free (struct timestamp_s *);
 struct timestamp_s * timestamp_decode (void * raw, int rawlen);
-int timestamp_encode (struct timestamp_s *, void * raw, int rawlen);
+int timestamp_encode (const struct timestamp_s *, void * raw, int rawlen);
 int timestamp_cmp (const struct timestamp_s *, const struct timestamp_s *);
 int timestamp_repr (const struct timestamp_s *, char[], int);
 void timestamp_dump (const struct timestamp_s *);
@@ -140,7 +140,7 @@ struct regid_s * regid_destroy (struct regid_s *);
 struct regid_s * regid_init (struct regid_s *, const char * id);
 void regid_free (struct regid_s *);
 struct regid_s * regid_decode (void * raw, int rawlen);
-int regid_encode (struct regid_s *, void * raw, int rawlen);
+int regid_encode (const struct regid_s *, void * raw, int rawlen);
 int regid_cmp (const struct regid_s *, const struct regid_s *);
 int regid_repr (const struct regid_s *, char[], int);
 void regid_dump (const struct regid_s *);

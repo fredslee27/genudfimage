@@ -13,7 +13,7 @@ uint32_t uint32_decode (void * space);
 uint64_t uint64_decode (void * space);
 
 int bytestr_encode (const uint8_t * src, int srclen, void * space, int spacelen);
-uint8_t * bytestr_decode (uint8_t * src, int srclen, const void * space, int spacelen);
+uint8_t * bytestr_decode (uint8_t * dst, int dstlen, const void * space, int spacelen);
 
 
 enum layoutfield_type_e {

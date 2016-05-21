@@ -44,11 +44,12 @@ charspec_decode (void * raw, int rawlen)
 }
 
 int
-charspec_encode (struct charspec_s * obj, void * raw, int rawlen)
+charspec_encode (const struct charspec_s * obj, void * raw, int rawlen)
 {
   int ofs = 0;
   ofs += uint8_encode(raw+ofs, obj->cst);
-  ofs += bytestr_encode(raw+ofs, rawlen-ofs, obj->csi, sizeof(obj->csi));
+//  ofs += bytestr_encode(raw+ofs, rawlen-ofs, obj->csi, sizeof(obj->csi));
+  ofs += bytestr_encode(obj->csi, sizeof(obj->csi), raw+ofs, rawlen-ofs);
   return ofs;
 }
 
@@ -201,7 +202,7 @@ timestamp_decode (void * raw, int rawlen)
 }
 
 int
-timestamp_encode (struct timestamp_s *obj, void * raw, int rawlen)
+timestamp_encode (const struct timestamp_s *obj, void * raw, int rawlen)
 {
   unsigned int typtz;
   unsigned int utzofs;
@@ -325,13 +326,20 @@ regid_decode (void * raw, int rawlen)
 }
 
 int
-regid_encode (struct regid_s *obj, void * raw, int rawlen)
+regid_encode (const struct regid_s *obj, void * raw, int rawlen)
 {
+  int ofs = 0;
   unsigned int uflag = 0;
   if (obj->flags.dirty) uflag |= REGID_FLAGS_DIRTY;
   if (obj->flags.protected) uflag |= REGID_FLAGS_PROTECTED;
-  bytestr_encode(raw+1, rawlen-1, obj->id, sizeof(obj->id));
-  bytestr_encode(raw+24, rawlen-24, obj->suffix, sizeof(obj->suffix));
+
+  ofs += uint8_encode(raw+0, uflag);
+//  bytestr_encode(raw+1, rawlen-1, obj->id, sizeof(obj->id));
+//  bytestr_encode(raw+24, rawlen-24, obj->suffix, sizeof(obj->suffix));
+  ofs += bytestr_encode(obj->id, sizeof(obj->id), raw+1, rawlen-1);
+  ofs += bytestr_encode(obj->suffix, sizeof(obj->suffix), raw+24, rawlen-24);
+
+  return ofs;
 }
 
 int

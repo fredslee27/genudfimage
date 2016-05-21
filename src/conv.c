@@ -365,6 +365,8 @@ udf_encode (void * space, int spacelen, layoutdescr_t descr, layoutvalues_t cont
       switch (fld->fldtype)
         {
         case LAYOUT_RESERVED:
+	  /* fill with #00 to nbp */
+	  memset(space + bp, 0, (nbp-bp));
           break;
         case LAYOUT_UINT8:
           uint8_encode(space + bp, contents[fldidx].word);
