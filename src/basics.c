@@ -61,7 +61,7 @@ charspec_cmp (const struct charspec_s * a, const struct charspec_s * b)
 }
 
 int
-charspec_str (const struct charspec_s * obj, char buf[], int buflen)
+charspec_repr (const struct charspec_s * obj, char buf[], int buflen)
 {
   int n = 0;
   n += snprintf(buf+n, buflen-n, "struct charspec_s _%p = {\n", obj);
@@ -75,7 +75,7 @@ void
 charspec_dump (const struct charspec_s * obj)
 {
   char buf[512];
-  charspec_str(obj, buf, sizeof(buf));
+  charspec_repr(obj, buf, sizeof(buf));
   puts(buf);
 }
 
@@ -250,7 +250,7 @@ timestamp_cmp (const struct timestamp_s *a, const struct timestamp_s *b)
 }
 
 int
-timestamp_str (const struct timestamp_s *obj, char buf[], int buflen)
+timestamp_repr (const struct timestamp_s *obj, char buf[], int buflen)
 {
   int n = 0;
   n += snprintf(buf+n, buflen-n, "struct timestamp_s _%p = {\n", obj);
@@ -271,7 +271,7 @@ void
 timestamp_dump (const struct timestamp_s *obj)
 {
   char buf[512];
-  timestamp_str(obj, buf, sizeof(buf));
+  timestamp_repr(obj, buf, sizeof(buf));
   puts(buf);
 }
 
@@ -340,7 +340,7 @@ regid_cmp (const struct regid_s *a, const struct regid_s *b)
 }
 
 int
-regid_str (const struct regid_s *obj, char buf[], int buflen)
+regid_repr (const struct regid_s *obj, char buf[], int buflen)
 {
   int n = 0;
   n += snprintf(buf+n, buflen-n, "struct regid_s _%p = {\n", obj);
@@ -358,7 +358,7 @@ void
 regid_dump (const struct regid_s *obj)
 {
   char buf[512];
-  regid_str(obj, buf, sizeof(buf));
+  regid_repr(obj, buf, sizeof(buf));
   puts(buf);
 }
 
@@ -425,6 +425,7 @@ dstring_cmp (const struct dstring_s *a, const struct dstring_s *b)
   return strncmp(a->d, b->d, a->size < b->size ? a->size : b->size);
 }
 
+#if 0
 int
 dstring_str (const struct dstring_s *obj, char buf[], int buflen)
 {
@@ -433,6 +434,7 @@ dstring_str (const struct dstring_s *obj, char buf[], int buflen)
   buf[copylen-1] = 0;
   return copylen;
 }
+#endif //0
 
 int
 dstring_repr (const struct dstring_s *obj, char buf[], int buflen)

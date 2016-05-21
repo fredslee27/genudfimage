@@ -198,9 +198,9 @@ path_component_cmp (const struct path_component_s * a,
 
 
 int
-path_component_str (const struct path_component_s *obj,
-		    char buf[],
-		    int buflen)
+path_component_repr (const struct path_component_s *obj,
+		     char buf[],
+		     int buflen)
 {
   int n = 0;
   n += snprintf(buf, buflen, "struct path_component_s _%p = {\n\
@@ -224,7 +224,7 @@ void
 path_component_dump (const struct path_component_s * obj)
 {
   char buf[512];
-  path_component_str(obj, buf, sizeof(buf));
+  path_component_repr(obj, buf, sizeof(buf));
   puts(buf);
 }
 
@@ -516,7 +516,7 @@ lb_addr_cmp (struct lb_addr_s * a, struct lb_addr_s * b)
 }
 
 int
-lb_addr_str (const struct lb_addr_s * obj, char buf[], int buflen)
+lb_addr_repr (const struct lb_addr_s * obj, char buf[], int buflen)
 {
   int n = 0;
   n += snprintf(buf, buflen, "struct lb_addr _%p = {\n\
@@ -530,7 +530,7 @@ void
 lb_addr_dump (const struct lb_addr_s * obj)
 {
   char buf[512];
-  lb_addr_str(obj, buf, sizeof(buf));
+  lb_addr_repr(obj, buf, sizeof(buf));
   puts(buf);
 }
 
@@ -565,7 +565,7 @@ tag_check_sum (struct tag_s * obj)
 }
 
 int
-tag_str (const struct tag_s * obj, char buf[], int buflen)
+tag_repr (const struct tag_s * obj, char buf[], int buflen)
 {
   int n = 0;
   n += snprintf(buf+n, buflen-n, "struct tag_s _%p = {\n", obj);
@@ -584,7 +584,7 @@ void
 tag_dump (const struct tag_s * obj)
 {
   char buf[512];
-  tag_str(obj, buf, sizeof(buf));
+  tag_repr(obj, buf, sizeof(buf));
   puts(buf);
 }
 
@@ -707,7 +707,7 @@ icbtag_init (struct icbtag_s * obj,
 }
 
 int
-icbtag_str (const struct icbtag_s * obj, char buf[], int buflen)
+icbtag_repr (const struct icbtag_s * obj, char buf[], int buflen)
 {
   int n = 0;
   n += snprintf(buf+n, buflen-n, "struct icbtag_s _%p = {", obj);
@@ -718,7 +718,7 @@ icbtag_str (const struct icbtag_s * obj, char buf[], int buflen)
   n += snprintf(buf+n, buflen-n, "  .ft = %u, /* %s */\n",
 		icb_file_type_int(obj->ft), icb_file_type_name(obj->ft));
   char picbl[16];
-  lb_addr_str(&(obj->picbl), picbl, sizeof(picbl));
+  lb_addr_repr(&(obj->picbl), picbl, sizeof(picbl));
   n += snprintf(buf+n, buflen-n, "  .picbl = %s,\n", picbl);
   n += snprintf(buf+n, buflen-n, "  .flags = (%c*%c%c%c%c%c%c%c%c%c%c%c)",
 		"slxd"[obj->flags.adtype],
@@ -741,7 +741,7 @@ void
 icbtag_dump (const struct icbtag_s * obj)
 {
   char buf[512];
-  icbtag_str(obj, buf, sizeof(buf));
+  icbtag_repr(obj, buf, sizeof(buf));
   puts(buf);
 }
 
@@ -861,7 +861,7 @@ fid_encode (const struct fid_s *obj, uint8_t * raw, int rawlen)
 }
 
 int
-fid_str (const struct fid_s *obj, char buf[], int buflen)
+fid_repr (const struct fid_s *obj, char buf[], int buflen)
 {
   int n = 0;
   n += snprintf(buf+n, buflen-n, "struct fid_s _%p = {\n", obj);
@@ -881,7 +881,7 @@ void
 fid_dump (const struct fid_s *obj)
 {
   char buf[1024];
-  fid_str(obj, buf, sizeof(buf));
+  fid_repr(obj, buf, sizeof(buf));
   puts(buf);
 }
 

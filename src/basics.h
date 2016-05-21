@@ -60,8 +60,22 @@ struct regid_s {
 };
 
 
+/* ECMA-167/3 1/7.2.11 : List of Character Set */
+/* bitmap in uint32_t */
+struct charsetlist_s {
+    unsigned int CS0:1;
+    unsigned int CS1:1;
+    unsigned int CS2:1;
+    unsigned int CS3:1;
+    unsigned int CS4:1;
+    unsigned int CS5:1;
+    unsigned int CS6:1;
+    unsigned int CS7:1;
+    unsigned int CS8:1;
+};
 
-/* ECMA-16/3 1/7.2.12  : Fixed-length character fields */
+
+/* ECMA-167/3 1/7.2.12 : Fixed-length character fields */
 struct dstring_s {
     uint8_t size;  /* Expected size of field (position of length-byte). */
     uint8_t len;  /* Number of valid bytes in 'd'. */
@@ -92,7 +106,7 @@ void charspec_free (struct charspec_s *);
 struct charspec_s * charspec_decode (void * raw, int rawlen);
 int charspec_encode (struct charspec_s *, void * raw, int rawlen);
 int charspec_cmp (const struct charspec_s *, const struct charspec_s *);
-int charspec_str (const struct charspec_s *, char[], int);
+int charspec_repr (const struct charspec_s *, char[], int);
 void charspec_dump (const struct charspec_s *);
 
 
@@ -117,7 +131,7 @@ void timestamp_free (struct timestamp_s *);
 struct timestamp_s * timestamp_decode (void * raw, int rawlen);
 int timestamp_encode (struct timestamp_s *, void * raw, int rawlen);
 int timestamp_cmp (const struct timestamp_s *, const struct timestamp_s *);
-int timestamp_str (const struct timestamp_s *, char[], int);
+int timestamp_repr (const struct timestamp_s *, char[], int);
 void timestamp_dump (const struct timestamp_s *);
 
 
@@ -128,7 +142,7 @@ void regid_free (struct regid_s *);
 struct regid_s * regid_decode (void * raw, int rawlen);
 int regid_encode (struct regid_s *, void * raw, int rawlen);
 int regid_cmp (const struct regid_s *, const struct regid_s *);
-int regid_str (const struct regid_s *, char[], int);
+int regid_repr (const struct regid_s *, char[], int);
 void regid_dump (const struct regid_s *);
 
 
@@ -139,7 +153,7 @@ void dstring_free (struct dstring_s *);
 struct dstring_s * dstring_decode (const uint8_t * raw, int rawlen);
 int dstring_encode (const struct dstring_s *, uint8_t * raw, int rawlen);
 int dstring_cmp (const struct dstring_s *, const struct dstring_s *);
-int dstring_str (const struct dstring_s *, char[], int);
+int dstring_repr (const struct dstring_s *, char[], int);
 void dstring_dump (const struct dstring_s *);
 
 

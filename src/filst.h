@@ -81,7 +81,7 @@ struct lb_addr_s * lb_addr_destroy (struct lb_addr_s * obj);
 void lb_addr_free (struct lb_addr_s * obj);
 struct lb_addr_s * lb_addr_decode (void * space, int spacelen);
 int lb_addr_encode (struct lb_addr_s * obj, void * space, int spacelen);
-int lb_addr_str (const struct lb_addr_s *, char[], int);
+int lb_addr_repr (const struct lb_addr_s *, char[], int);
 void lb_addr_dump (const struct lb_addr_s *);
 
 
@@ -153,7 +153,7 @@ struct icbtag_s * icbtag_init (struct icbtag_s *,
 			       enum icb_file_type_e file_type,
 			       const struct lb_addr_s * parent_icb_location,
 			       unsigned int allocation_descriptor_type);
-int icbtag_str (const struct icbtag_s *, char[], int);
+int icbtag_repr (const struct icbtag_s *, char[], int);
 void icbtag_dump (const struct icbtag_s *);
 
 
@@ -206,7 +206,7 @@ struct tag_s * tag_init (struct tag_s *,
 			 unsigned int serial,
 			 unsigned int tagloc);
 unsigned int tag_check_sum (struct tag_s *);
-int tag_str (const struct tag_s *, char[], int);
+int tag_repr (const struct tag_s *, char[], int);
 void tag_dump (const struct tag_s *);
 
 
@@ -255,7 +255,7 @@ struct fid_s * fid_init (struct fid_s *,
 void fid_free (struct fid_s *);
 struct fid_s * fid_decode (struct fid_s *, uint8_t * raw, int rawlen);
 int fid_encode (const struct fid_s *, uint8_t * raw, int rawlen);
-int fid_str (const struct fid_s *, char [], int);
+int fid_repr (const struct fid_s *, char [], int);
 void fid_dump (const struct fid_s *);
 
 
