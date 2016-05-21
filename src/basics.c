@@ -364,3 +364,95 @@ regid_dump (const struct regid_s *obj)
 
 
 
+
+
+struct dstring_s *
+dstring_malloc ()
+{
+  return (struct dstring_s*)malloc(sizeof(struct dstring_s));
+}
+
+struct dstring_s *
+dstring_destroy (struct dstring_s *obj)
+{
+  return obj;
+}
+
+struct dstring_s *
+dstring_init (struct dstring_s *obj, int fldlen, const char *s)
+{
+  if (!obj) return obj;
+
+  obj->size = fldlen;
+  strncpy(obj->d, s, obj->size);
+  obj->d[obj->size-1] = 0;
+
+  return obj;
+}
+
+void
+dstring_free (struct dstring_s *obj)
+{
+  free(dstring_destroy(obj));
+}
+
+struct dstring_s *
+dstring_decode (const uint8_t * raw, int rawlen)
+{
+  struct dstring_s * obj = malloc(sizeof(struct dstring_s));
+
+  memset(obj, 0, sizeof(*obj));
+  obj->size = rawlen;
+  obj->len = raw[rawlen-1];
+  strncpy(obj->d, raw, obj->len);
+  // rest alreay filled with '\0'.
+
+  return obj;
+}
+
+int
+dstring_encode (const struct dstring_s *obj, uint8_t * raw, int rawlen)
+{
+  memcpy(raw, obj->d, obj->len);
+  memset(raw + obj->len, 0, rawlen - obj->len);
+  raw[rawlen-1] = obj->len;
+  return rawlen;
+}
+
+int
+dstring_cmp (const struct dstring_s *a, const struct dstring_s *b)
+{
+  return strncmp(a->d, b->d, a->size < b->size ? a->size : b->size);
+}
+
+int
+dstring_str (const struct dstring_s *obj, char buf[], int buflen)
+{
+  int copylen = buflen < obj->size ? buflen : obj->size;
+  strncpy(buf, obj->d, copylen);
+  buf[copylen-1] = 0;
+  return copylen;
+}
+
+int
+dstring_repr (const struct dstring_s *obj, char buf[], int buflen)
+{
+  int n = 0;
+  n += snprintf(buf+n, buflen-n, "struct dstring_s _%p = {\n", obj);
+  n += snprintf(buf+n, buflen-n, "  .size = %u,\n", obj->size);
+  n += snprintf(buf+n, buflen-n, "  .len = %u,\n", obj->len);
+  n += snprintf(buf+n, buflen-n, "  .d = \"%s\",\n", obj->d);
+  n += snprintf(buf+n, buflen-n, "};");
+  return n;
+}
+
+void
+dstring_dump (const struct dstring_s *obj)
+{
+  char buf[512];
+  dstring_repr(obj, buf, sizeof(buf));
+  puts(buf);
+}
+
+
+

@@ -15,6 +15,7 @@
 #define SZ_CHARSPEC_CSI 63
 #define SZ_REGID_ID 23
 #define SZ_REGID_SUFFIX 8
+#define SZ_DSTRING 256
 
 #define TZ_UNSPEC (-2047)
 
@@ -56,6 +57,15 @@ struct regid_s {
     } flags;			/* Flags */
     uint8_t id[SZ_REGID_ID+1];  /* Identifier */ /* 23 significant, +1 for C string */
     uint8_t suffix[SZ_REGID_SUFFIX];  /* Suffix */ /* Arbitrary bytes */
+};
+
+
+
+/* ECMA-16/3 1/7.2.12  : Fixed-length character fields */
+struct dstring_s {
+    uint8_t size;  /* Expected size of field (position of length-byte). */
+    uint8_t len;  /* Number of valid bytes in 'd'. */
+    char d[SZ_DSTRING];
 };
 
 
@@ -120,6 +130,17 @@ int regid_encode (struct regid_s *, void * raw, int rawlen);
 int regid_cmp (const struct regid_s *, const struct regid_s *);
 int regid_str (const struct regid_s *, char[], int);
 void regid_dump (const struct regid_s *);
+
+
+struct dstring_s * dstring_malloc ();
+struct dstring_s * dstring_destroy (struct dstring_s *);
+struct dstring_s * dstring_init (struct dstring_s *, int fldlen, const char *s);
+void dstring_free (struct dstring_s *);
+struct dstring_s * dstring_decode (const uint8_t * raw, int rawlen);
+int dstring_encode (const struct dstring_s *, uint8_t * raw, int rawlen);
+int dstring_cmp (const struct dstring_s *, const struct dstring_s *);
+int dstring_str (const struct dstring_s *, char[], int);
+void dstring_dump (const struct dstring_s *);
 
 
 #endif // _BASICS_H_

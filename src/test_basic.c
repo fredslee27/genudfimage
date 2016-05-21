@@ -83,9 +83,27 @@ int test_regid0 ()
 
 
 
+int test_dstring0 ()
+{
+  uint8_t bindata[16] = {
+      'L', 'o', 'r', 'e', 'm', ' ', 'i' , 'p', 's', 'u', 'm', 0x00, 0x00, 0x00,
+      0x00, 0x0b
+  };
+  struct dstring_s * dstring0;
+  dstring0 = dstring_decode(bindata, sizeof(bindata));
+
+  dstring_dump(dstring0);
+
+  int retval = -1;
+  return retval;
+}
+
+
+
 int main ()
 {
   test_charspec0();
   test_timestamp0();
   test_regid0();
+  test_dstring0();
 }
