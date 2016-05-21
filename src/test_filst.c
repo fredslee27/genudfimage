@@ -78,7 +78,7 @@ int test_fid1 ()
 
   struct fid_s * fid0 = NULL;
   printf("fid0=%p\n", fid0);
-  fid0 = fid_decode(fid0, testdata, sizeof(testdata));
+  fid0 = fid_decode(testdata, sizeof(testdata));
 
   fid_dump(fid0);
 }

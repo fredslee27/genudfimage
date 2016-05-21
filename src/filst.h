@@ -234,8 +234,8 @@ struct long_ad_s * long_ad_init (struct long_ad_s *,
 				 const struct lb_addr_s * loc,
 				 uint8_t impuse[6]);
 void long_ad_free (struct long_ad_s *);
-struct long_ad_s * long_ad_decode (uint8_t * raw, int rawlen);
-int long_ad_encode (const struct long_ad_s *, uint8_t raw[], int rawlen);
+struct long_ad_s * long_ad_decode (uint8_t * space, int spacelen);
+int long_ad_encode (const struct long_ad_s *, uint8_t space[], int spacelen);
 int long_ad_cmp (const struct long_ad_s *, const struct long_ad_s *);
 int long_ad_repr (const struct long_ad_s *, char[], int);
 void long_ad_dump (const struct long_ad_s *);
@@ -273,8 +273,8 @@ struct fid_s * fid_init (struct fid_s *,
 			 const char * file_identifier,
 			 unsigned int length_file_identifier);
 void fid_free (struct fid_s *);
-struct fid_s * fid_decode (struct fid_s *, uint8_t * raw, int rawlen);
-int fid_encode (const struct fid_s *, uint8_t * raw, int rawlen);
+struct fid_s * fid_decode (uint8_t * space, int spacelen);
+int fid_encode (const struct fid_s *, uint8_t * space, int spacelen);
 int fid_repr (const struct fid_s *, char [], int);
 void fid_dump (const struct fid_s *);
 

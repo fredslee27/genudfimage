@@ -119,12 +119,14 @@ path_component_free (struct path_component_s * obj)
 struct path_component_s *
 path_component_decode (void * space, int spacelen)
 {
-  struct path_component_s * obj;
+  struct path_component_s * obj = NULL;
   layoutvalue_t contents[5] = { 0, };
 
   udf_decode(space, spacelen, udf_path_component, contents);
 
-  obj = path_component_malloc(contents[1].word);
+  if (!obj) obj = path_component_malloc(contents[1].word);
+  if (!obj || !space || !spacelen) return obj;
+
   obj->raw = space;
   obj->typ = contents[0].word;
   obj->len = contents[1].word;
@@ -300,22 +302,23 @@ pathname_destroy (struct pathname_s * obj)
 struct pathname_s *
 pathname_decode (void * space, int spacelen)
 {
-  struct pathname_s * retval = NULL;
+  struct pathname_s * obj = NULL;
   int ofs = 0;
   int remainder = spacelen;
   int pclen;
   struct path_component_s *front, *prev;
 
+  if (!obj) obj = pathname_malloc(0);
+  if (!obj || !space || !spacelen) return obj;
   front = prev = NULL;
-  retval = pathname_malloc(0);
   while (remainder > 0)
     {
       front = path_component_decode(space+ofs, remainder);
       front->next = NULL;
       pclen = sizeof(struct path_component_s) + front->len;
-      if (!retval->components)
+      if (!obj->components)
         {
-          retval->components = front;
+          obj->components = front;
         }
       else
         {
@@ -326,7 +329,7 @@ pathname_decode (void * space, int spacelen)
       remainder -= pclen;
     }
 
-  return 0;
+  return obj;
 }
 
 /* Write into UDF binary format. */
@@ -484,15 +487,17 @@ lb_addr_free (struct lb_addr_s * obj)
 struct lb_addr_s *
 lb_addr_decode (void * space, int spacelen)
 {
-  struct lb_addr_s * retval = NULL;
+  struct lb_addr_s * obj = NULL;
   layoutvalue_t contents[2] = { 0, };
+
+  if (!obj) obj = lb_addr_malloc();
+  if (!obj || !space || !spacelen) return obj;
 
   udf_decode(space, spacelen, udf_lb_addr, contents);
 
-  retval = lb_addr_malloc();
-  retval->lbn = contents[0].word;
-  retval->prn = contents[1].word;
-  return retval;
+  obj->lbn = contents[0].word;
+  obj->prn = contents[1].word;
+  return obj;
 }
 
 int
@@ -600,15 +605,17 @@ tag_check_sum (struct tag_s * obj)
 }
 
 struct tag_s *
-tag_decode (const uint8_t * raw, int rawlen)
+tag_decode (const uint8_t * space, int spacelen)
 {
   struct tag_s * obj = NULL;
 
   layoutvalue_t contents[8] = { 0, };
+
   if (!obj) obj = malloc(sizeof(*obj));
+  if (!obj || !space || !spacelen) return obj;
   memset(obj, 0, sizeof(*obj));
 
-  int n = udf_decode(raw, rawlen, udf_tag, contents);
+  int n = udf_decode(space, spacelen, udf_tag, contents);
   obj->tagid = tagid_enum(contents[0].word);
   obj->vers = contents[1].word;
   obj->checksum = contents[2].word;
@@ -622,7 +629,7 @@ tag_decode (const uint8_t * raw, int rawlen)
 }
 
 int
-tag_encode (const struct tag_s * obj, uint8_t * raw, int rawlen)
+tag_encode (const struct tag_s * obj, uint8_t * space, int spacelen)
 {
   layoutvalue_t contents[9] = { 0, };
   if (!obj) return 0;
@@ -637,7 +644,7 @@ tag_encode (const struct tag_s * obj, uint8_t * raw, int rawlen)
   contents[7].word = obj->tagloc;
   contents[8].word = 16;
 
-  int retval = udf_encode(raw, rawlen, udf_tag, contents);
+  int retval = udf_encode(space, spacelen, udf_tag, contents);
 
   return retval;
 }
@@ -870,13 +877,13 @@ long_ad_free (struct long_ad_s *obj)
 }
 
 struct long_ad_s *
-long_ad_decode (uint8_t * raw, int rawlen)
+long_ad_decode (uint8_t * space, int spacelen)
 {
   struct long_ad_s * obj;
   obj = long_ad_malloc();
   layoutvalue_t contents[4] = { 0, };
 
-  udf_decode(raw, rawlen, udf_long_ad, contents);
+  udf_decode(space, spacelen, udf_long_ad, contents);
 
   obj->len = contents[0].word;
   struct lb_addr_s * loc;
@@ -889,7 +896,7 @@ long_ad_decode (uint8_t * raw, int rawlen)
 }
 
 int
-long_ad_encode (const struct long_ad_s *obj, uint8_t raw[], int rawlen)
+long_ad_encode (const struct long_ad_s *obj, uint8_t space[], int spacelen)
 {
   layoutvalue_t contents[4] = { 0, };
   uint8_t loc[6];
@@ -902,7 +909,7 @@ long_ad_encode (const struct long_ad_s *obj, uint8_t raw[], int rawlen)
   contents[2].ptr = (void*)&(obj->impuse);
   contents[3].word = 16;
 
-  int res = udf_encode(raw, rawlen, udf_long_ad, contents);
+  int res = udf_encode(space, spacelen, udf_long_ad, contents);
   return res;
 }
 
@@ -1020,18 +1027,21 @@ fid_free (struct fid_s *obj)
 }
 
 struct fid_s *
-fid_decode (struct fid_s *obj, uint8_t * raw, int rawlen)
+fid_decode (uint8_t * space, int spacelen)
 {
+  struct fid_s * obj = NULL;
   layoutvalue_t contents[9] = { 0, };
   int dlen;
   int padding;
 
-  udf_decode(raw, rawlen, udf_fid, contents);
+  if (!obj) obj = fid_malloc(dlen);
+  if (!obj || !space || !spacelen) return obj;
+  memset(obj, 0, sizeof(*obj));
+
+  udf_decode(space, spacelen, udf_fid, contents);
   unsigned int L_FI = contents[3].word;
   unsigned int L_IU = contents[5].word;
   dlen = L_FI + L_IU;
-  obj = fid_malloc(dlen);
-  memset(obj, 0, sizeof(*obj));
 
   // align to get 4-byte boundary.
   //padding = 4 * ((L_FI + L_IU + 38 + 3) / 4) - (L_FI + L_IU + 38);
@@ -1149,11 +1159,16 @@ fsd_free (struct fsd_s *obj)
 }
 
 struct fsd_s *
-fsd_decode (struct fsd_s *obj, const uint8_t * raw, int rawlen)
+fsd_decode (const uint8_t * space, int spacelen)
 {
+  struct fsd_s * obj = NULL;
+
   layoutvalue_t contents[20] = { 0, };
 
-  udf_decode(raw, rawlen, udf_fsd, contents);
+  if (!obj) obj = fsd_malloc();
+  if (!obj || !space || !spacelen) return obj;
+
+  udf_decode(space, spacelen, udf_fsd, contents);
 
   struct tag_s * tag = tag_decode(contents[0].ptr, 16);
   obj->tag = *tag;
@@ -1216,7 +1231,7 @@ fsd_decode (struct fsd_s *obj, const uint8_t * raw, int rawlen)
 }
 
 int
-fsd_encode (const struct fsd_s *obj, uint8_t * raw, int rawlen)
+fsd_encode (const struct fsd_s *obj, uint8_t * space, int spacelen)
 {
   layoutvalue_t contents[20] = { 0, };
 
@@ -1273,7 +1288,7 @@ fsd_encode (const struct fsd_s *obj, uint8_t * raw, int rawlen)
   contents[17].ptr = ssdicb;
   contents[18].word = 512;
 
-  int retval = udf_encode(raw, rawlen, udf_fsd, contents);
+  int retval = udf_encode(space, spacelen, udf_fsd, contents);
 
   return retval;
 }
