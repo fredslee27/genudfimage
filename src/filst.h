@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "basics.h"
+
 
 /* ECMA-167/3 + UDF/3 : File Structure */
 
@@ -215,10 +217,23 @@ void tag_dump (const struct tag_s *);
 
 
 struct long_ad_s {
-    unsigned int a;
-    unsigned int b;
-    unsigned int c;
+    unsigned int len;
+    struct lb_addr_s loc;
+    uint8_t impuse[6];
 };
+
+struct long_ad_s * long_ad_malloc ();
+struct long_ad_s * long_ad_destroy (struct long_ad_s *);
+struct long_ad_s * long_ad_init (struct long_ad_s *,
+				 unsigned int,
+				 const struct lb_addr_s * loc,
+				 uint8_t impuse[6]);
+void long_ad_free (struct long_ad_s *);
+struct long_ad_s * long_ad_decode (uint8_t * raw, int rawlen);
+int long_ad_encode (const struct long_ad_s *, uint8_t raw[], int rawlen);
+int long_ad_cmp (const struct long_ad_s *, const struct long_ad_s *);
+int long_ad_repr (const struct long_ad_s *, char[], int);
+void long_ad_dump (const struct long_ad_s *);
 
 
 
@@ -272,11 +287,11 @@ struct fsd_s {
     unsigned int fsn;	      /* File Set Number */
     unsigned int fsdn;	      /* File Set Descriptor Number */
     struct charspec_s lvidcs; /* Logical Volume Character Set */
-    char lvid[SZ_FSD_LVID+1]; /* Logical Volume Identifier */
+    struct dstring_s lvid;    /* Logical Volume Identifier */
     struct charspec_s fscs;   /* File Set Character Set */
-    char fsid[SZ_FSD_FSID+1]; /* File Set Identifier */
-    char cfid[SZ_FSD_CFID+1]; /* Copyright File Identifier */
-    char afid[SZ_FSD_AFID+1]; /* Abstract File Identifier */
+    struct dstring_s fsid;    /* File Set Identifier */
+    struct dstring_s cfid;    /* Copyright File Identifier */
+    struct dstring_s afid;    /* Abstract File Identifier */
     struct long_ad_s rdicb;   /* Root ICB */
     struct regid_s domid;     /* Domain Identifier */
     struct long_ad_s ne;      /* Next Extent */

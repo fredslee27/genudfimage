@@ -67,7 +67,7 @@ charspec_repr (const struct charspec_s * obj, char buf[], int buflen)
   n += snprintf(buf+n, buflen-n, "struct charspec_s _%p = {\n", obj);
   n += snprintf(buf+n, buflen-n, "  .cst=%d,\n", obj->cst);
   n += snprintf(buf+n, buflen-n, "  .csi=\"%s\",\n", obj->csi);
-  n += snprintf(buf+n, buflen-n, "};");
+  n += snprintf(buf+n, buflen-n, "}");
   return n;
 }
 
@@ -75,7 +75,8 @@ void
 charspec_dump (const struct charspec_s * obj)
 {
   char buf[512];
-  charspec_repr(obj, buf, sizeof(buf));
+  int n = charspec_repr(obj, buf, sizeof(buf));
+  n += snprintf(buf+n, sizeof(buf)-n, ";");
   puts(buf);
 }
 
@@ -254,16 +255,16 @@ timestamp_repr (const struct timestamp_s *obj, char buf[], int buflen)
 {
   int n = 0;
   n += snprintf(buf+n, buflen-n, "struct timestamp_s _%p = {\n", obj);
-  n += snprintf(buf+n, buflen-n, "  .typ = %u\n", obj->typ);
-  n += snprintf(buf+n, buflen-n, "  .tz = %d\n", obj->tz);
-  n += snprintf(buf+n, buflen-n, "  .year = %d\n", obj->year);
-  n += snprintf(buf+n, buflen-n, "  .month = %u\n", obj->month);
-  n += snprintf(buf+n, buflen-n, "  .day = %u\n", obj->day);
-  n += snprintf(buf+n, buflen-n, "  .hour = %u\n", obj->hour);
-  n += snprintf(buf+n, buflen-n, "  .min = %u\n", obj->min);
-  n += snprintf(buf+n, buflen-n, "  .sec = %u\n", obj->sec);
-  n += snprintf(buf+n, buflen-n, "  .usec = %u\n", obj->usec);
-  n += snprintf(buf+n, buflen-n, "};");
+  n += snprintf(buf+n, buflen-n, "  .typ = %u,\n", obj->typ);
+  n += snprintf(buf+n, buflen-n, "  .tz = %d,\n", obj->tz);
+  n += snprintf(buf+n, buflen-n, "  .year = %d,\n", obj->year);
+  n += snprintf(buf+n, buflen-n, "  .month = %u,\n", obj->month);
+  n += snprintf(buf+n, buflen-n, "  .day = %u,\n", obj->day);
+  n += snprintf(buf+n, buflen-n, "  .hour = %u,\n", obj->hour);
+  n += snprintf(buf+n, buflen-n, "  .min = %u,\n", obj->min);
+  n += snprintf(buf+n, buflen-n, "  .sec = %u,\n", obj->sec);
+  n += snprintf(buf+n, buflen-n, "  .usec = %u,\n", obj->usec);
+  n += snprintf(buf+n, buflen-n, "}");
   return n;
 }
 
@@ -271,7 +272,8 @@ void
 timestamp_dump (const struct timestamp_s *obj)
 {
   char buf[512];
-  timestamp_repr(obj, buf, sizeof(buf));
+  int n = timestamp_repr(obj, buf, sizeof(buf));
+  n += snprintf(buf+n, sizeof(buf)-n, ";");
   puts(buf);
 }
 
@@ -350,7 +352,7 @@ regid_repr (const struct regid_s *obj, char buf[], int buflen)
   n += snprintf(buf+n, buflen-n, "  .suffix = { %02x, %02x, %02x, %02x, %02x, %02x, %02x, %02x },\n",
 		obj->suffix[0], obj->suffix[1], obj->suffix[2], obj->suffix[3],
 		obj->suffix[4], obj->suffix[5], obj->suffix[6], obj->suffix[7]);
-  n += snprintf(buf+n, buflen-n, "};");
+  n += snprintf(buf+n, buflen-n, "}");
   return n;
 }
 
@@ -358,7 +360,8 @@ void
 regid_dump (const struct regid_s *obj)
 {
   char buf[512];
-  regid_repr(obj, buf, sizeof(buf));
+  int n = regid_repr(obj, buf, sizeof(buf));
+  n += snprintf(buf+n, sizeof(buf)-n, ";");
   puts(buf);
 }
 
@@ -444,7 +447,7 @@ dstring_repr (const struct dstring_s *obj, char buf[], int buflen)
   n += snprintf(buf+n, buflen-n, "  .size = %u,\n", obj->size);
   n += snprintf(buf+n, buflen-n, "  .len = %u,\n", obj->len);
   n += snprintf(buf+n, buflen-n, "  .d = \"%s\",\n", obj->d);
-  n += snprintf(buf+n, buflen-n, "};");
+  n += snprintf(buf+n, buflen-n, "}");
   return n;
 }
 
@@ -452,7 +455,8 @@ void
 dstring_dump (const struct dstring_s *obj)
 {
   char buf[512];
-  dstring_repr(obj, buf, sizeof(buf));
+  int n = dstring_repr(obj, buf, sizeof(buf));
+  n += snprintf(buf+n, sizeof(buf)-n, ";");
   puts(buf);
 }
 

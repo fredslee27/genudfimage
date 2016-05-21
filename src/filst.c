@@ -6,6 +6,7 @@
 #include "filst.h"
 #include "basics.h"
 #include "conv.h"
+#include "util.h"
 
 
 
@@ -215,7 +216,7 @@ path_component_repr (const struct path_component_s *obj,
     {
       n += snprintf(buf+n, buflen-n, "  .ci=\"\",\n");
     }
-  n += snprintf(buf+n, buflen-n, "};");
+  n += snprintf(buf+n, buflen-n, "}");
   return n;
 }
 
@@ -224,7 +225,8 @@ void
 path_component_dump (const struct path_component_s * obj)
 {
   char buf[512];
-  path_component_repr(obj, buf, sizeof(buf));
+  int n = path_component_repr(obj, buf, sizeof(buf));
+  n += snprintf(buf+n, sizeof(buf)-n, ";");
   puts(buf);
 }
 
@@ -519,10 +521,10 @@ int
 lb_addr_repr (const struct lb_addr_s * obj, char buf[], int buflen)
 {
   int n = 0;
-  n += snprintf(buf, buflen, "struct lb_addr _%p = {\n\
-  .lbn=%u,\n\
-  .prn=%u,\n\
-};", obj, obj->lbn, obj->prn);
+  n += snprintf(buf+n, buflen-n, "struct lb_addr_s _%p = {\n", obj);
+  n += snprintf(buf+n, buflen-n, "  .lbn = %u,\n", obj->lbn);
+  n += snprintf(buf+n, buflen-n, "  .prn = %u,\n", obj->prn);
+  n += snprintf(buf+n, buflen-n, "}");
   return n;
 }
 
@@ -530,7 +532,8 @@ void
 lb_addr_dump (const struct lb_addr_s * obj)
 {
   char buf[512];
-  lb_addr_repr(obj, buf, sizeof(buf));
+  int n = lb_addr_repr(obj, buf, sizeof(buf));
+  n += snprintf(buf+n, sizeof(buf)-n, ";");
   puts(buf);
 }
 
@@ -569,14 +572,14 @@ tag_repr (const struct tag_s * obj, char buf[], int buflen)
 {
   int n = 0;
   n += snprintf(buf+n, buflen-n, "struct tag_s _%p = {\n", obj);
-  n += snprintf(buf+n, buflen-n, "  .tagid=%u,\n", tagid_int(obj->tagid));
+  n += snprintf(buf+n, buflen-n, "  .tagid=%u /* %s */,\n", tagid_int(obj->tagid), tagid_name(obj->tagid));
   n += snprintf(buf+n, buflen-n, "  .vers=%u,\n", obj->vers);
   n += snprintf(buf+n, buflen-n, "  .checksum=%u,\n", obj->checksum);
   n += snprintf(buf+n, buflen-n, "  .serial=%u,\n", obj->serial);
   n += snprintf(buf+n, buflen-n, "  .crc=%u,\n", obj->crc);
   n += snprintf(buf+n, buflen-n, "  .crclen=%u,\n", obj->crclen);
   n += snprintf(buf+n, buflen-n, "  .tagloc=%u,\n", obj->tagloc);
-  n += snprintf(buf+n, buflen-n, "};");
+  n += snprintf(buf+n, buflen-n, "}");
   return n;
 }
 
@@ -584,7 +587,8 @@ void
 tag_dump (const struct tag_s * obj)
 {
   char buf[512];
-  tag_repr(obj, buf, sizeof(buf));
+  int n = tag_repr(obj, buf, sizeof(buf));
+  n += snprintf(buf+n, sizeof(buf)-n, ";");
   puts(buf);
 }
 
@@ -717,7 +721,7 @@ icbtag_repr (const struct icbtag_s * obj, char buf[], int buflen)
   n += snprintf(buf+n, buflen-n, "  .mne = %u,\n", obj->mne);
   n += snprintf(buf+n, buflen-n, "  .ft = %u, /* %s */\n",
 		icb_file_type_int(obj->ft), icb_file_type_name(obj->ft));
-  char picbl[16];
+  char picbl[64];
   lb_addr_repr(&(obj->picbl), picbl, sizeof(picbl));
   n += snprintf(buf+n, buflen-n, "  .picbl = %s,\n", picbl);
   n += snprintf(buf+n, buflen-n, "  .flags = (%c*%c%c%c%c%c%c%c%c%c%c%c)",
@@ -733,7 +737,7 @@ icbtag_repr (const struct icbtag_s * obj, char buf[], int buflen)
 		obj->flags.transformed ? 'X' : 'x',
 		obj->flags.multiversion ? 'V' : 'v',
 		obj->flags.stream ? 'R' : 'r');
-  n += snprintf(buf+n, buflen-n, "};");
+  n += snprintf(buf+n, buflen-n, "}");
   return n;
 }
 
@@ -741,9 +745,122 @@ void
 icbtag_dump (const struct icbtag_s * obj)
 {
   char buf[512];
-  icbtag_repr(obj, buf, sizeof(buf));
+  int n = icbtag_repr(obj, buf, sizeof(buf));
+  n += snprintf(buf+n, sizeof(buf)-n, ";");
   puts(buf);
 }
+
+
+
+
+
+
+
+
+struct layoutfield_s udf_long_ad[] = {
+      { 0, 0, "len", LAYOUT_UINT32 },
+      { 0, 4, "loc", LAYOUT_PTR },
+      { 0, 10, "impuse", LAYOUT_PTR },
+      { 0, 16, 0, LAYOUT_END },
+};
+
+struct long_ad_s *
+long_ad_malloc ()
+{
+  return (struct long_ad_s *)malloc(sizeof(struct long_ad_s));
+}
+
+struct long_ad_s *
+long_ad_destroy (struct long_ad_s *obj)
+{
+  return obj;
+}
+
+struct long_ad_s *
+long_ad_init (struct long_ad_s *obj, unsigned int len, const struct lb_addr_s * loc, uint8_t impuse[6])
+{
+  if (!obj) return obj;
+
+  obj->len = len;
+  obj->loc = *loc;
+  memcpy(obj->impuse, impuse, 6);
+
+  return obj;
+}
+
+void
+long_ad_free (struct long_ad_s *obj)
+{
+  free(long_ad_destroy(obj));
+}
+
+struct long_ad_s *
+long_ad_decode (uint8_t * raw, int rawlen)
+{
+  struct long_ad_s * obj;
+  obj = long_ad_malloc();
+  layoutvalue_t contents[3] = { 0, };
+
+  udf_decode(raw, rawlen, udf_long_ad, contents);
+
+  obj->len = contents[0].word;
+  struct lb_addr_s * loc;
+  loc = lb_addr_decode(contents[1].ptr, 6);
+  obj->loc = *loc;
+  lb_addr_free(loc);
+  memcpy(obj->impuse, contents[2].ptr, 6);
+
+  return obj;
+}
+
+int
+long_ad_encode (const struct long_ad_s *obj, uint8_t raw[], int rawlen)
+{
+  layoutvalue_t contents[3] = { 0, };
+
+  contents[0].word = obj->len;
+  contents[1].ptr = (void*)&(obj->loc);
+  contents[2].ptr = (void*)&(obj->impuse);
+
+  int res = udf_encode(raw, rawlen, udf_long_ad, contents);
+  return res;
+}
+
+int
+long_ad_cmp (const struct long_ad_s *a, const struct long_ad_s *b)
+{
+  int res = memcmp(a, b, sizeof(*a));
+  return res;
+}
+
+int
+long_ad_repr (const struct long_ad_s *obj, char buf[], int buflen)
+{
+  int n = 0;
+  n += snprintf(buf+n, buflen-n, "struct long_ad_s _%p = {\n", obj);
+  n += snprintf(buf+n, buflen-n, "  .len = %u,\n", obj->len);
+  char loc[64];
+  lb_addr_repr(&(obj->loc), loc, sizeof(loc));
+  reindent_repr(loc, sizeof(loc), 2);
+  n += snprintf(buf+n, buflen-n, "  .loc = %s,\n", loc);
+  n += snprintf(buf+n, buflen-n,
+	       	"  .impuse = { 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x },\n",
+	       	obj->impuse[0], obj->impuse[1], obj->impuse[2],
+	       	obj->impuse[3], obj->impuse[4], obj->impuse[5]);
+  n += snprintf(buf+n, buflen-n, "}");
+  return n;
+}
+
+void
+long_ad_dump (const struct long_ad_s *obj)
+{
+  char buf[512];
+  int n = long_ad_repr(obj, buf, sizeof(buf));
+  n += snprintf(buf+n, sizeof(buf)-n, ";");
+  puts(buf);
+}
+
+
 
 
 
@@ -873,7 +990,7 @@ fid_repr (const struct fid_s *obj, char buf[], int buflen)
   n += snprintf(buf+n, buflen-n, "  .L_IU = %u,\n", obj->L_IU);
   n += snprintf(buf+n, buflen-n, "  .impuse = ...,\n");
   n += snprintf(buf+n, buflen-n, "  .fi = \"%s\",\n", obj->fi);
-  n += snprintf(buf+n, buflen-n, "};");
+  n += snprintf(buf+n, buflen-n, "}");
   return n;
 }
 
@@ -881,9 +998,125 @@ void
 fid_dump (const struct fid_s *obj)
 {
   char buf[1024];
-  fid_repr(obj, buf, sizeof(buf));
+  int n = fid_repr(obj, buf, sizeof(buf));
+  n += snprintf(buf+n, sizeof(buf)-n, ";");
   puts(buf);
 }
+
+
+
+
+
+
+
+#define SELF struct fsd_s *obj
+
+#define INSTFORM_fsd_const(args...) (const struct fsd_s *obj, ##args)
+#define INSTFORM_fsd(args...) (struct fsd_s *obj, ##args)
+
+//#define INSTFORM(args...) FORM(Thingy, ##args)
+
+#define INSTFUNC(class, method) class##_##method INSTFORM_##class
+#define INSTFUNC_CONST(class, method) class##_##method INSTFORM_##class##_const
+//#define INSTFUNC(class, method) class##_##method INSTFORM
+//#define INSTFUNC_CONST(class, method) class##_##method INSTFORM(class)
+
+
+
+struct fsd_s *
+fsd_malloc ()
+{
+  return (struct fsd_s*)malloc(sizeof(struct fsd_s));
+}
+
+struct fsd_s *
+fsd_destroy (struct fsd_s *obj)
+{
+  return obj;
+}
+
+struct fsd_s *
+fsd_init (struct fsd_s *obj)
+{
+}
+
+void
+fsd_free (struct fsd_s *obj)
+{
+  free(fsd_destroy(obj));
+}
+
+struct fsd_s *
+fsd_decode (struct fsd_s *obj, const uint8_t * raw, int rawlen)
+{
+}
+
+int
+fsd_encode (const struct fsd_s *obj, uint8_t * raw, int rawlen)
+{
+}
+
+int
+fsd_cmp (const struct fsd_s *a, const struct fsd_s *b)
+{
+}
+
+int
+fsd_repr (const struct fsd_s *obj, char buf[], int buflen)
+{
+  int n = 0;
+  char tmp[512];
+  n += snprintf(buf+n, buflen-n, "struct fsd_s _%p = {\n", obj);
+  tag_repr(&(obj->tag), tmp, sizeof(tmp));
+  reindent_repr(tmp, sizeof(tmp), 2);
+  n += snprintf(buf+n, buflen-n, "  .tag = %s,\n", tmp);
+  timestamp_repr(&(obj->rdt), tmp, sizeof(tmp));
+  reindent_repr(tmp, sizeof(tmp), 2);
+  n += snprintf(buf+n, buflen-n, "  .rdt = %s,\n", tmp);
+  n += snprintf(buf+n, buflen-n, "  .il = %d,\n", obj->il);
+  n += snprintf(buf+n, buflen-n, "  .mil = %d,\n", obj->mil);
+  n += snprintf(buf+n, buflen-n, "  .csl = 0x%04x,\n", obj->csl);
+  n += snprintf(buf+n, buflen-n, "  .mcsl = 0x%04x,\n", obj->mcsl);
+  n += snprintf(buf+n, buflen-n, "  .fsn = %d,\n", obj->fsn);
+  n += snprintf(buf+n, buflen-n, "  .fsdn = %d,\n", obj->fsdn);
+  charspec_repr(&(obj->lvidcs), tmp, sizeof(tmp));
+  reindent_repr(tmp, sizeof(tmp), 2);
+  n += snprintf(buf+n, buflen-n, "  .lvidcs = %s,\n", tmp);
+  n += snprintf(buf+n, buflen-n, "  .lvid = \"%s\",\n", obj->lvid.d);
+  charspec_repr(&(obj->fscs), tmp, sizeof(tmp));
+  reindent_repr(tmp, sizeof(tmp), 2);
+  n += snprintf(buf+n, buflen-n, "  .fscs = %s,\n", tmp);
+  n += snprintf(buf+n, buflen-n, "  .fsid = \"%s\",\n", obj->fsid.d);
+  n += snprintf(buf+n, buflen-n, "  .cfid = \"%s\",\n", obj->cfid.d);
+  n += snprintf(buf+n, buflen-n, "  .afid = \"%s\",\n", obj->afid.d);
+  long_ad_repr(&(obj->rdicb), tmp, sizeof(tmp));
+  reindent_repr(tmp, sizeof(tmp), 2);
+  n += snprintf(buf+n, buflen-n, "  .rdicb = %s,\n", tmp);
+  regid_repr(&(obj->domid), tmp, sizeof(tmp));
+  reindent_repr(tmp, sizeof(tmp), 2);
+  n += snprintf(buf+n, buflen-n, "  .domid = %s,\n", tmp);
+  long_ad_repr(&(obj->ne), tmp, sizeof(tmp));
+  reindent_repr(tmp, sizeof(tmp), 2);
+  n += snprintf(buf+n, buflen-n, "  .ne = %s,\n", tmp);
+  long_ad_repr(&(obj->ssdicb), tmp, sizeof(tmp));
+  reindent_repr(tmp, sizeof(tmp), 2);
+  n += snprintf(buf+n, buflen-n, "  .ssdicb = %s,\n", tmp);
+  n += snprintf(buf+n, buflen-n, "}");
+
+  return n;
+}
+
+int
+INSTFUNC_CONST(fsd, dump) ()
+{
+  char buf[2048];
+  int n = fsd_repr(obj, buf, sizeof(buf));
+  n += snprintf(buf+n, sizeof(buf)-n, ";");
+  puts(buf);
+}
+
+
+
 
 
 

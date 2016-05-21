@@ -98,6 +98,18 @@ int test_fsd1 ()
   };
 }
 
+int test_fsd2 ()
+{
+  uint8_t bindata[512];
+  struct fsd_s * fsd0;
+
+  fsd0 = fsd_malloc();
+
+  fsd_dump(fsd0);
+
+  return -1;
+}
+
 
 int main ()
 {
@@ -105,6 +117,7 @@ int main ()
   test_pn1();
   test_lb_addr1();
   test_fid1();
+  test_fsd2();
   return 0;
 }
 
