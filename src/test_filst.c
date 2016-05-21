@@ -15,9 +15,11 @@ int test_pc1 ()
       'p', 'o', 't', 'a', 't', 'o',
   };
 
-  const struct path_component_s * obj = path_component_decode(testdata, sizeof(testdata));
+  struct path_component_s * obj = path_component_decode(testdata, sizeof(testdata));
 
   path_component_dump(obj);
+
+  path_component_free(obj);
   return 0;
 }
 
@@ -44,7 +46,10 @@ int test_pn1 ()
       'c', 'a', 'n', 'n', 'o', 'n',
   };
 
-  const struct pathname_s * obj = pathname_decode(pn0, sizeof(pn0));
+  struct pathname_s * obj = pathname_decode(pn0, sizeof(pn0));
+
+  pathname_free(obj);
+  return -1;
 }
 
 
@@ -54,9 +59,12 @@ int test_lb_addr1 ()
     0x23, 0x74, 0x01, 0x00,
     0x02, 0x00,
   };
-  const struct lb_addr_s * obj = lb_addr_decode(testdata, sizeof(testdata));
+  struct lb_addr_s * obj = lb_addr_decode(testdata, sizeof(testdata));
 
   lb_addr_dump(obj);
+
+  lb_addr_free(obj);
+  return -1;
 }
 
 
@@ -81,6 +89,9 @@ int test_fid1 ()
   fid0 = fid_decode(testdata, sizeof(testdata));
 
   fid_dump(fid0);
+
+  fid_free(fid0);
+  return -1;
 }
 
 
@@ -109,6 +120,7 @@ int test_fsd2 ()
 
   fsd_dump(fsd0);
 
+  fsd_free(fsd0);
   return -1;
 }
 
@@ -127,6 +139,7 @@ int test_fsd3 ()
   printf("fsd %p:\n", fsd0);
   hexdump(bindata, sizeof(bindata));
 
+  fsd_free(fsd0);
   return -1;
 }
 

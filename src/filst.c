@@ -43,7 +43,7 @@ struct path_component_s *
 path_component_dup (const struct path_component_s * obj)
 {
   struct path_component_s * retval;
-  int msize;
+  int msize = sizeof(struct path_component_s) + obj->len;
 
   retval = path_component_malloc(obj->len);
   memcpy(retval, obj, msize);
@@ -117,7 +117,7 @@ path_component_free (struct path_component_s * obj)
    Create instance (decode) from UDF binary format.
 */
 struct path_component_s *
-path_component_decode (void * space, int spacelen)
+path_component_decode (const uint8_t * space, int spacelen)
 {
   struct path_component_s * obj = NULL;
   layoutvalue_t contents[5] = { 0, };
@@ -127,7 +127,7 @@ path_component_decode (void * space, int spacelen)
   if (!obj) obj = path_component_malloc(contents[1].word);
   if (!obj || !space || !spacelen) return obj;
 
-  obj->raw = space;
+  obj->raw = (void*)space;
   obj->typ = contents[0].word;
   obj->len = contents[1].word;
   obj->vers = contents[2].word;
@@ -140,7 +140,7 @@ path_component_decode (void * space, int spacelen)
    Write (encode) into UDF binary format.
 */
 int
-path_component_encode (struct path_component_s * obj, void * space, int spacelen)
+path_component_encode (const struct path_component_s * obj, uint8_t * space, int spacelen)
 {
   layoutvalue_t contents[5] = { 0, };
   int retval;
@@ -245,6 +245,7 @@ pathname_malloc (int ncomponents)
   msize += sizeof(struct pathname_s);
 
   retval = (struct pathname_s*)malloc(msize);
+  memset(retval, 0, sizeof(*retval));
   return retval;
 }
 
@@ -310,6 +311,7 @@ pathname_decode (void * space, int spacelen)
 
   if (!obj) obj = pathname_malloc(0);
   if (!obj || !space || !spacelen) return obj;
+
   front = prev = NULL;
   while (remainder > 0)
     {
@@ -457,6 +459,7 @@ lb_addr_malloc ()
 {
   struct lb_addr_s * retval;
   retval = malloc(sizeof(struct lb_addr_s));
+  memset(retval, 0, sizeof(*retval));
   return retval;
 }
 
@@ -488,7 +491,7 @@ struct lb_addr_s *
 lb_addr_decode (void * space, int spacelen)
 {
   struct lb_addr_s * obj = NULL;
-  layoutvalue_t contents[2] = { 0, };
+  layoutvalue_t contents[3] = { 0, };
 
   if (!obj) obj = lb_addr_malloc();
   if (!obj || !space || !spacelen) return obj;
@@ -564,7 +567,9 @@ struct layoutfield_s udf_tag[] = {
 struct tag_s *
 tag_malloc ()
 {
-  return (struct tag_s*)malloc(sizeof(struct tag_s));
+  struct tag_s * retval = malloc(sizeof(struct tag_s));
+  memset(retval, 0, sizeof(*retval));
+  return retval;
 }
 
 struct tag_s *
@@ -849,7 +854,9 @@ struct layoutfield_s udf_long_ad[] = {
 struct long_ad_s *
 long_ad_malloc ()
 {
-  return (struct long_ad_s *)malloc(sizeof(struct long_ad_s));
+  struct long_ad_s * retval = malloc(sizeof(struct long_ad_s));
+  memset(retval, 0, sizeof(*retval));
+  return retval;
 }
 
 struct long_ad_s *
@@ -879,9 +886,11 @@ long_ad_free (struct long_ad_s *obj)
 struct long_ad_s *
 long_ad_decode (uint8_t * space, int spacelen)
 {
-  struct long_ad_s * obj;
-  obj = long_ad_malloc();
+  struct long_ad_s * obj = NULL;
   layoutvalue_t contents[4] = { 0, };
+
+  if (!obj) obj = long_ad_malloc();
+  if (!obj || !space || !spacelen) return obj;
 
   udf_decode(space, spacelen, udf_long_ad, contents);
 
@@ -986,7 +995,10 @@ struct fid_s *
 fid_malloc (unsigned int dlen)
 {
   dlen += 4;  /* TODO: less-lazy calculation. */
-  return (struct fid_s*)malloc(sizeof(struct fid_s) + dlen);
+  size_t msize = sizeof(struct fid_s) + dlen;
+  struct fid_s * retval = malloc(msize);
+  memset(retval, 0, msize);
+  return retval;
 }
 
 struct fid_s *
@@ -1034,14 +1046,14 @@ fid_decode (uint8_t * space, int spacelen)
   int dlen;
   int padding;
 
-  if (!obj) obj = fid_malloc(dlen);
-  if (!obj || !space || !spacelen) return obj;
-  memset(obj, 0, sizeof(*obj));
-
   udf_decode(space, spacelen, udf_fid, contents);
+
   unsigned int L_FI = contents[3].word;
   unsigned int L_IU = contents[5].word;
   dlen = L_FI + L_IU;
+
+  if (!obj) obj = fid_malloc(dlen);
+  if (!obj || !space || !spacelen) return obj;
 
   // align to get 4-byte boundary.
   //padding = 4 * ((L_FI + L_IU + 38 + 3) / 4) - (L_FI + L_IU + 38);
@@ -1138,7 +1150,9 @@ struct layoutfield_s udf_fsd[] = {
 struct fsd_s *
 fsd_malloc ()
 {
-  return (struct fsd_s*)malloc(sizeof(struct fsd_s));
+  struct fsd_s * retval = malloc(sizeof(struct fsd_s));
+  memset(retval, 0, sizeof(*retval));
+  return retval;
 }
 
 struct fsd_s *

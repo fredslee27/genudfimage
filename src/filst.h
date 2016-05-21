@@ -41,6 +41,22 @@ struct path_component_s {
     struct path_component_s * next;
 };
 
+struct path_component_s * path_component_malloc (int);
+struct path_component_s * path_component_dup (const struct path_component_s *);
+struct path_component_s * path_component_destroy (struct path_component_s *);
+//struct path_component_s * path_component_init (struct path_component_s *);
+const struct path_component_s * path_component_make (
+    enum path_component_type_e,
+    unsigned int version,
+    int cilen,
+    char ci[]);
+void path_component_free (struct path_component_s *);
+struct path_component_s * path_component_decode (const uint8_t * space, int spacelen);
+int path_component_encode (const struct path_component_s *, uint8_t * space, int spacelen);
+int path_component_cmp (const struct path_component_s *, const struct path_component_s *);
+int path_component_repr (const struct path_component_s *, char[], int);
+void path_component_dump (const struct path_component_s *);
+
 
 /* ECMA-167/3 4/8.7 : Pathname */
 struct pathname_s {
