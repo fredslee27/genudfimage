@@ -14,12 +14,15 @@
 Naming convention:
 
 _malloc - allocate space from heap, with any relevant count value.
-_init - constructor, populate from parameters.
-_destroy - destructor, handling free inner members.
-_free - blindly destroy then deallocate.
-_decode - deserialize from UDF binary
-_encode - serialize to UDF binary
-_cmp - comparator
+//_copy - copy constructor (non-NULL self) or duplicator (NULL self).
+_copy - duplicator.
+_init - constructor, populates from parameters.
+_destroy - destructor, handles free() of inner members.
+_free - blindly destroys then deallocates.
+_decode - deserialize from UDF binary.
+_encode - serialize to UDF binary.
+_cmp - comparator, returns <0, 0, >0 depending on <,==,> sense.
+_repr - generate string representation.
 */
 
 
@@ -43,6 +46,7 @@ struct path_component_s *
 path_component_dup (const struct path_component_s * obj)
 {
   struct path_component_s * retval;
+  if (!obj) return NULL;
   int msize = sizeof(struct path_component_s) + obj->len;
 
   retval = path_component_malloc(obj->len);
@@ -84,6 +88,7 @@ path_component_destroy (struct path_component_s * obj)
 }
 
 
+#if 0
 /* Create read-only instance (on heap) from parameters. */
 const struct path_component_s *
 path_component_make (enum path_component_type_e pctype,
@@ -103,6 +108,7 @@ path_component_make (enum path_component_type_e pctype,
 
   return obj;
 }
+#endif //0
 
 
 /* destroy and deallocate. */
