@@ -48,12 +48,20 @@ hexdump (uint8_t *bin, int binlen)
     {
       row = bin + (y*16);
       n = (y*16);
-      printf("%08X | ", (y*16));
-      for (x = 0; (x < 16) && (y*16+x < binlen); x++)
+      printf("%08X  ", (y*16));
+      for (x = 0; x < 16; x++)
 	{
-	  printf("%02X ", bin[y*16+x]);
+          if (x == 8) printf(" ");
+          if (y*16+x < binlen)
+            {
+	      printf("%02X ", bin[y*16+x]);
+            }
+          else
+            {
+	      printf("%2s ", "");
+            }
 	}
-      printf("| ");
+      printf(" |");
       for (x = 0; (x < 16) && (y*16+x < binlen); x++)
 	{
 	  int ch = bin[y*16+x];
@@ -61,7 +69,7 @@ hexdump (uint8_t *bin, int binlen)
 	    ch = '.';
 	  printf("%c", ch);
 	}
-      printf("\n");
+      printf("|\n");
       y += 1;
     }
   return 0;

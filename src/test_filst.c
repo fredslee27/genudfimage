@@ -85,12 +85,38 @@ int test_fid1 ()
   };
 
   struct fid_s * fid0 = NULL;
-  printf("fid0=%p\n", fid0);
   fid0 = fid_decode(testdata, sizeof(testdata));
+  printf("fid0=%p\n", fid0);
 
   fid_dump(fid0);
 
   fid_free(fid0);
+  return -1;
+}
+
+int test_fid2 ()
+{
+  uint8_t bindata[2048] = { 0, };
+
+  struct fid_s * fid2 = NULL;
+  const char * fi = "Potato.jpeg";
+  //fid2 = fid_malloc(12);
+  fid2 = fid_malloc(strlen(fi));
+
+  fid_init(fid2, NULL,
+           1, 0x00,
+           NULL,
+           NULL, 0,
+           fi, strlen(fi));
+  printf("fid2=%p\n", fid2);
+
+  fid_dump(fid2);
+
+  fid_encode(fid2, bindata, sizeof(bindata));
+  printf("fid2=%p +%lu==0x%lx\n", fid2, fid_len(fid2), fid_len(fid2));
+  hexdump(bindata, fid_len(fid2));
+
+  fid_free(fid2);
   return -1;
 }
 
@@ -147,9 +173,14 @@ int test_fsd3 ()
 int main ()
 {
   test_pc1();
+
   test_pn1();
+
   test_lb_addr1();
+
   test_fid1();
+  test_fid2();
+
   test_fsd3();
   return 0;
 }

@@ -273,6 +273,8 @@ struct fid_s {
     uint8_t * impuse;	  /* Implementation Use space in 'd'. */
     uint8_t * fi;	  /* File Identifer space in 'd'. */
 
+    uint8_t padding;      /* Number of padding bytes (to reach 4B align). */
+
     uint8_t d[];
 };
 
@@ -291,6 +293,7 @@ struct fid_s * fid_init (struct fid_s *,
 void fid_free (struct fid_s *);
 struct fid_s * fid_decode (uint8_t * space, int spacelen);
 int fid_encode (const struct fid_s *, uint8_t * space, int spacelen);
+int fid_cmp (const struct fid_s *, const struct fid_s *);
 int fid_repr (const struct fid_s *, char [], int);
 void fid_dump (const struct fid_s *);
 
@@ -318,6 +321,42 @@ struct fsd_s {
     struct long_ad_s ne;      /* Next Extent */
     struct long_ad_s ssdicb;  /* System Stream Directory ICB */
 };
+
+
+struct fsd_s * fsd_malloc ();
+struct fsd_s * fsd_destroy (struct fsd_s *);
+struct fsd_s * fsd_init (struct fsd_s *,
+                         const struct tag_s * tag,
+                         const struct timestamp_s * rdt,
+                         unsigned int il,
+                         unsigned int mil,
+                         unsigned int csl,
+                         unsigned int mcsl,
+                         unsigned int fsn,
+                         unsigned int fsdn,
+                         const struct charspec_s * lvidcs,
+                         const struct dstring_s * lvid,
+                         const struct charspec_s * fscs,
+                         const struct dstring_s * fsid,
+                         const struct dstring_s * cfid,
+                         const struct dstring_s * afid,
+                         const struct long_ad_s * rdicb,
+                         const struct regid_s * domid,
+                         const struct long_ad_s * ne,
+                         const struct long_ad_s * ssdicb);
+struct fsd_s * fsd_init_atoms (struct fsd_s *,
+                               unsigned int il,
+                               unsigned int mil,
+                               unsigned int csl,
+                               unsigned int mcsl,
+                               unsigned int fsn,
+                               unsigned int fsdn);
+void fsd_free (struct fsd_s *);
+struct fsd_s * fsd_decode (const uint8_t * space, int spacelen);
+int fsd_encode (const struct fsd_s *, uint8_t * space, int spacelen);
+int fsd_cmp (const struct fsd_s *, const struct fsd_s *);
+int fsd_repr (const struct fsd_s *, char buf[], int buflen);
+void fsd_dump (const struct fsd_s *);
 
 
 

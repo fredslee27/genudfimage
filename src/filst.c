@@ -21,6 +21,7 @@ _destroy - destructor, handles free() of inner members.
 _free - blindly destroys then deallocates.
 _decode - deserialize from UDF binary.
 _encode - serialize to UDF binary.
+_len - number of bytes needed for UDF binary (i.e. minimum space for _encode()).
 _cmp - comparator, returns <0, 0, >0 depending on <,==,> sense.
 _repr - generate string representation.
 */
@@ -258,6 +259,14 @@ pathname_malloc (int ncomponents)
 void
 pathname_free (struct pathname_s * obj)
 {
+  struct path_component_s *iter, *next;
+
+  for (iter = obj->components; iter != NULL; iter = next)
+    {
+      next = iter->next;
+      path_component_free(iter);
+    }
+
   free(obj);
 }
 
@@ -996,15 +1005,35 @@ layoutdescr_t udf_fid = {
       { (1 << 3) | (1 << 5), 38, 0, LAYOUT_END },
 };
 
+static unsigned int
+_fid_padding (unsigned int x)
+{
+  return (4 - (x % 4)) % 4;
+}
+
+/* Expected size of UDF binary equivalent. */
+size_t
+fid_len (const struct fid_s *obj)
+{
+  size_t dlen = obj->L_FI + obj->L_IU + obj->padding;
+  size_t msize = 38 + dlen;
+  return msize;
+}
+
 // malloc, init, destroy, free, decode, encode, str, dump
 struct fid_s *
 fid_malloc (unsigned int dlen)
 {
   dlen += 4;  /* TODO: less-lazy calculation. */
   size_t msize = sizeof(struct fid_s) + dlen;
-  struct fid_s * retval = malloc(msize);
-  memset(retval, 0, msize);
-  return retval;
+  struct fid_s * obj = malloc(msize);
+  memset(obj, 0, msize);
+
+  obj->fvn = 1;
+  tag_init(&(obj->tag), TAGID_FID, 3, 0, 0);
+  obj->impuse = obj->d;
+  obj->fi = obj->d;
+  return obj;
 }
 
 struct fid_s *
@@ -1024,6 +1053,10 @@ fid_init (struct fid_s *obj,
 	  const char * file_identifier,
 	  unsigned int length_file_identifier)
 {
+  size_t dlen = 0;
+  dlen = length_implementation_use + length_file_identifier + 2;
+  size_t msize = dlen + sizeof(struct fid_s);
+
   if (!obj) return obj;
 
   if (tag) obj->tag = *(tag);
@@ -1032,8 +1065,13 @@ fid_init (struct fid_s *obj,
   if (icb) obj->icb = *(icb);
   obj->impuse = obj->d;
   obj->L_IU = length_implementation_use;
-  obj->fi = obj->d + length_implementation_use;
+  obj->fi = obj->d + length_implementation_use + 1;
   obj->L_FI = length_file_identifier;
+  obj->padding = _fid_padding(38 + obj->L_IU + obj->L_FI);
+
+  memcpy(obj->impuse, implementation_use, length_implementation_use);
+  memcpy(obj->fi, file_identifier, length_file_identifier);
+  obj->fi[length_file_identifier] = 0;
 
   return obj;
 }
@@ -1048,7 +1086,7 @@ struct fid_s *
 fid_decode (uint8_t * space, int spacelen)
 {
   struct fid_s * obj = NULL;
-  layoutvalue_t contents[9] = { 0, };
+  layoutvalue_t contents[10] = { 0, };
   int dlen;
   int padding;
 
@@ -1063,7 +1101,8 @@ fid_decode (uint8_t * space, int spacelen)
 
   // align to get 4-byte boundary.
   //padding = 4 * ((L_FI + L_IU + 38 + 3) / 4) - (L_FI + L_IU + 38);
-  padding = (4 - ((L_FI + L_IU + 38) % 4)) % 4;
+  //padding = (4 - ((L_FI + L_IU + 38) % 4)) % 4;
+  padding = _fid_padding(L_FI + L_IU + 38);
   contents[8].word = padding;
 
 //  tag_decode(&(obj->tag), contents[0].ptr, 16);
@@ -1081,8 +1120,30 @@ fid_decode (uint8_t * space, int spacelen)
 }
 
 int
-fid_encode (const struct fid_s *obj, uint8_t * raw, int rawlen)
+fid_encode (const struct fid_s *obj, uint8_t * space, int spacelen)
 {
+  layoutvalue_t contents[10] = { 0, };
+  uint8_t tag[16];
+  uint8_t icb[16];
+
+  tag_encode(&(obj->tag), tag, sizeof(tag));
+  long_ad_encode(&(obj->icb), icb, sizeof(icb));
+
+  unsigned int padding =_fid_padding(obj->L_FI + obj->L_IU + 38);
+  contents[0].ptr = tag;
+  contents[1].word = obj->fvn;
+  contents[2].word = obj->fc;
+  contents[3].word = obj->L_FI;
+  contents[4].ptr = icb;
+  contents[5].word = obj->L_IU;
+  contents[6].ptr = obj->impuse;
+  contents[7].ptr = obj->fi;
+//  contents[8].word = _fid_padding(obj->L_FI + obj->L_IU + 38);
+  contents[8].word = 38 + obj->L_FI + obj->L_IU + padding;
+
+  int retval = udf_encode(space, spacelen, udf_fid, contents);
+
+  return retval;
 }
 
 int
@@ -1090,14 +1151,24 @@ fid_repr (const struct fid_s *obj, char buf[], int buflen)
 {
   int n = 0;
   n += snprintf(buf+n, buflen-n, "struct fid_s _%p = {\n", obj);
-  n += snprintf(buf+n, buflen-n, "  .tag = ...,\n");
+
+  char tmp[256];
+  tag_repr(&(obj->tag), tmp, sizeof(tmp));
+  reindent_repr(tmp, sizeof(tmp), 2);
+
+  n += snprintf(buf+n, buflen-n, "  .tag = %s,\n", tmp);
   n += snprintf(buf+n, buflen-n, "  .fvn = %u,\n", obj->fvn);
   n += snprintf(buf+n, buflen-n, "  .fc = %u,\n", obj->fc);
   n += snprintf(buf+n, buflen-n, "  .L_FI = %u,\n", obj->L_FI);
-  n += snprintf(buf+n, buflen-n, "  .icb = ...,\n");
+
+  long_ad_repr(&(obj->icb), tmp, sizeof(tmp));
+  reindent_repr(tmp, sizeof(tmp), 2);
+
+  n += snprintf(buf+n, buflen-n, "  .icb = %s,\n", tmp);
   n += snprintf(buf+n, buflen-n, "  .L_IU = %u,\n", obj->L_IU);
   n += snprintf(buf+n, buflen-n, "  .impuse = ...,\n");
   n += snprintf(buf+n, buflen-n, "  .fi = \"%s\",\n", obj->fi);
+  n += snprintf(buf+n, buflen-n, "  .padding = %u,\n", obj->padding);
   n += snprintf(buf+n, buflen-n, "}");
   return n;
 }
@@ -1168,8 +1239,59 @@ fsd_destroy (struct fsd_s *obj)
 }
 
 struct fsd_s *
-fsd_init (struct fsd_s *obj)
+fsd_init_atoms (struct fsd_s *obj,
+                unsigned int il,
+                unsigned int mil,
+                unsigned int csl,
+                unsigned int mcsl,
+                unsigned int fsn,
+                unsigned int fsdn)
 {
+  obj->il = il;
+  obj->mil = mil;
+  obj->csl = csl;
+  obj->mcsl = mcsl;
+  obj->fsn = fsn;
+  obj->fsdn = fsdn;
+  return obj;
+}
+
+struct fsd_s *
+fsd_init (struct fsd_s *obj,
+          const struct tag_s * tag,
+          const struct timestamp_s * rdt,
+          unsigned int il,
+          unsigned int mil,
+          unsigned int csl,
+          unsigned int mcsl,
+          unsigned int fsn,
+          unsigned int fsdn,
+          const struct charspec_s * lvidcs,
+          const struct dstring_s * lvid,
+          const struct charspec_s * fscs,
+          const struct dstring_s * fsid,
+          const struct dstring_s * cfid,
+          const struct dstring_s * afid,
+          const struct long_ad_s * rdicb,
+          const struct regid_s * domid,
+          const struct long_ad_s * ne,
+          const struct long_ad_s * ssdicb)
+{
+  fsd_init_atoms(obj, il, mil, csl, mcsl, fsn, fsdn);
+  obj->tag = *tag;
+  obj->rdt = *rdt;
+  obj->lvidcs = *lvidcs;
+  obj->lvid = *lvid;
+  obj->fscs = *fscs;
+  obj->fsid = *fsid;
+  obj->cfid = *cfid;
+  obj->afid = *afid;
+  obj->rdicb = *rdicb;
+  obj->domid = *domid;
+  obj->ne = *ne;
+  obj->ssdicb = *ssdicb;
+
+  return obj;
 }
 
 void
@@ -1246,6 +1368,7 @@ fsd_decode (const uint8_t * space, int spacelen)
   long_ad_free(ssdicb);
 
   /* TODO: make sure reserved is #00. */
+  contents[18].word = 512;
 
   return obj;
 }
@@ -1366,7 +1489,7 @@ fsd_repr (const struct fsd_s *obj, char buf[], int buflen)
   return n;
 }
 
-int
+void
 INSTFUNC_CONST(fsd, dump) ()
 {
   char buf[2048];
@@ -1374,6 +1497,8 @@ INSTFUNC_CONST(fsd, dump) ()
   n += snprintf(buf+n, sizeof(buf)-n, ";");
   puts(buf);
 }
+
+
 
 
 
