@@ -789,6 +789,35 @@ icb_file_type_name (enum icb_file_type_e ft)
     }
 }
 
+
+
+struct layoutfield_s udf_icbtag[] = {
+    { 0, 0, "prnde", LAYOUT_UINT32 },
+    { 0, 4, "st", LAYOUT_UINT16 },
+    { 0, 6, "sp", LAYOUT_UINT16 },
+    { 0, 8, "mne", LAYOUT_UINT16 },
+    { 0, 10, "reserved", LAYOUT_RESERVED },
+    { 0, 11, "ft", LAYOUT_UINT8 },
+    { 0, 12, "picbl", LAYOUT_PTR },
+    { 0, 18, "flags", LAYOUT_UINT16 },
+    { 0, 20, 0, LAYOUT_END },
+};
+
+struct icbtag_s *
+icbtag_malloc ()
+{
+  struct icbtag_s * obj;
+  obj = malloc(sizeof(struct icbtag_s));
+  memset(obj, 0, sizeof(obj));
+  return obj;
+}
+
+struct icbtag_s *
+icbtag_destroy (struct icbtag_s *obj)
+{
+  return obj;
+}
+
 struct icbtag_s *
 icbtag_init (struct icbtag_s * obj,
 	     unsigned int previous_recorded_number_of_direct_entries,
@@ -810,6 +839,58 @@ icbtag_init (struct icbtag_s * obj,
   memset(&(obj->flags), 0, sizeof(obj->flags));
   obj->flags.adtype = allocation_descriptor_type;
   return obj;
+}
+
+void
+icbtag_free (struct icbtag_s *obj)
+{
+  free(icbtag_destroy(obj));
+}
+
+struct icbtag_s *
+icbtag_decode (const uint8_t * space, int spacelen)
+{
+  struct icbtag_s * obj = NULL;
+  layoutvalue_t contents[9] = { 0, };
+
+  udf_decode(space, spacelen, udf_icbtag, contents);
+
+  if (!obj) obj = icbtag_malloc();
+
+  obj->prnde = contents[0].word;
+  obj->st = contents[1].word;
+  obj->sp = contents[2].word;
+  obj->mne = contents[3].word;
+  obj->ft = contents[5].word;
+  struct lb_addr_s * picbl = lb_addr_decode(contents[6].ptr, 6);
+  obj->picbl = *picbl;
+  lb_addr_free(picbl);
+
+  // TODO: flags
+//  obj->flags = contents[7].word;
+
+  return obj;
+}
+
+int
+icbtag_encode (const struct icbtag_s *obj, uint8_t * space, int spacelen)
+{
+  layoutvalue_t contents[9] = { 0, };
+
+  contents[0].word = obj->prnde;
+  contents[1].word = obj->st;
+  contents[2].word = obj->sp;
+  contents[3].word = obj->mne;
+  contents[5].word = obj->ft;
+  uint8_t picbl[6];
+  lb_addr_encode(&(obj->picbl), picbl, sizeof(picbl));
+  contents[6].ptr = picbl;
+  // TODO: flags
+//  contents[7].word = obj->prnde;
+
+  int n = udf_encode(space, spacelen, udf_icbtag, contents);
+
+  return n;
 }
 
 int
@@ -1497,6 +1578,367 @@ INSTFUNC_CONST(fsd, dump) ()
   n += snprintf(buf+n, sizeof(buf)-n, ";");
   puts(buf);
 }
+
+
+
+
+
+struct layoutfield_s udf_aed[] = {
+    { 0, 0, "tag", LAYOUT_PTR },
+    { 0, 16, "pael", LAYOUT_UINT32 },
+    { 0, 20, "L_AD", LAYOUT_UINT32 },
+    { 0, 24, 0, LAYOUT_END },
+};
+
+#if 0
+struct aed_s {
+    struct tag_s tag;
+    unsigned int pael;
+    unsigned int dlen;
+
+    unsigned int adtype;  // ADTYPE_*
+    unsigned int nad;  /* Number of allocation descriptors, of adtype. */
+    union {
+        uint8_t * unknown;
+        uint8_t * direct;
+        struct short_ad_s * short_ad;
+        struct long_ad_s * long_ad;
+        struct ext_ad_s * ext_ad;
+    } ad;  /* Access as Allocation Descriptors Sequence. */
+
+    uint8_t d[];    /* Storage space for Allocation Descriptors Sequence. */
+};
+#endif //0
+
+struct aed_s *
+aed_malloc (int adbytes)
+{
+  struct aed_s * obj;
+  size_t msize = sizeof(struct aed_s) + adbytes;
+
+  fprintf(stderr, "aed_malloc implementation incomplete\n");
+  obj = malloc(msize);
+  obj->dlen = adbytes;
+  obj->adtype = ADTYPE_DIRECT;
+  obj->ad.direct = obj->d;
+
+  return obj;
+}
+
+struct aed_s *
+aed_short_malloc (int nad)
+{
+  int dlen = sizeof(struct short_ad_s) * nad;
+  struct aed_s * obj = aed_malloc(dlen);
+  obj->adtype = ADTYPE_SHORT;
+  obj->ad.short_ad = (struct short_ad_s *)(obj->d);
+  obj->nad = nad;
+
+  return obj;
+}
+
+struct aed_s *
+aed_long_malloc (int nad)
+{
+  int dlen = sizeof(struct long_ad_s) * nad;
+  struct aed_s * obj = aed_malloc(dlen);
+  obj->adtype = ADTYPE_LONG;
+  obj->ad.long_ad = (struct long_ad_s*)(obj->d);
+  obj->nad = nad;
+
+  return obj;
+}
+
+struct aed_s *
+aed_ext_malloc (int nad)
+{
+  int dlen = sizeof(struct ext_ad_s) * nad;
+  struct aed_s * obj = aed_malloc(dlen);
+  obj->adtype = ADTYPE_EXT;
+  obj->ad.ext_ad = (struct ext_ad_s*)(obj->d);
+  obj->nad = nad;
+
+  return obj;
+}
+
+struct aed_s *
+aed_destroy (struct aed_s *obj)
+{
+  return obj;
+}
+
+struct aed_s *
+aed_init (struct aed_s *obj,
+          unsigned int pael,
+          unsigned int adtype,
+          const void * ad_data,
+          unsigned int adlen)
+{
+  if (!obj) return obj;
+
+  obj = aed_malloc(adlen);
+  obj->pael = pael;
+  obj->adtype = adtype;
+  switch (adtype)
+    {
+    case ADTYPE_SHORT:
+      obj->nad = adlen / sizeof(struct short_ad_s);
+      obj->ad.short_ad = (struct short_ad_s*)(obj->d);
+      break;
+    case ADTYPE_LONG:
+      obj->nad = adlen / sizeof(struct long_ad_s);
+      obj->ad.long_ad = (struct long_ad_s*)(obj->d);
+      break;
+    case ADTYPE_EXT:
+      obj->nad = adlen / sizeof(struct ext_ad_s);
+      obj->ad.ext_ad = (struct ext_ad_s*)(obj->d);
+      break;
+    default:
+      obj->adtype = ADTYPE_DIRECT;
+      obj->nad = adlen;
+      obj->ad.direct = (uint8_t*)(obj->d);
+      break;
+    }
+  memcpy(obj->d, ad_data, adlen);
+
+  return obj;
+}
+
+void
+aed_free (struct aed_s *obj)
+{
+  free(aed_destroy(obj));
+}
+
+struct aed_s *
+aed_decode (const uint8_t * space, int spacelen)
+{
+  struct aed_s * obj = NULL;
+  layoutvalue_t contents[4] = { 0, };
+
+  udf_decode(space, spacelen, udf_aed, contents);
+
+  size_t dlen = contents[2].word;
+
+  if (!obj) obj = aed_malloc(dlen);
+  if (!obj || !space || !spacelen) return obj;
+
+  struct tag_s * tag = tag_decode(contents[0].ptr, 16);
+  obj->tag = *tag;
+  tag_free(tag);
+  obj->pael = contents[1].word;
+  obj->dlen = dlen;
+  memcpy(obj->d, space+24, spacelen-24);
+
+  // TODO: ensure total size of descriptor+AD does not exceed sector size.
+
+  return obj;
+}
+
+int
+aed_encode (const struct aed_s *obj, uint8_t * space, int spacelen)
+{
+  layoutvalue_t contents[4] = { 0, };
+
+  uint8_t tag[16];
+  tag_encode(&(obj->tag), tag, sizeof(tag));
+
+  size_t dlen;
+
+  contents[0].ptr = tag;
+  contents[1].word = obj->pael;
+  /* TODO: calculate packed. */
+  dlen = obj->dlen;
+  contents[2].word = obj->dlen;
+
+  int retval = udf_encode(space, spacelen, udf_aed, contents);
+
+  // TODO: encode array of allocation descriptors.
+
+  return retval;
+}
+
+/* Calculate space needed for encode() */
+int
+aed_len (const struct aed_s *obj)
+{
+  size_t msize = 24;
+  // TODO: calculate this?
+  msize += obj->dlen;
+
+  return msize;
+}
+
+int
+aed_cmp (const struct aed_s *a, const struct aed_s *b)
+{
+  return -1;
+}
+
+int
+aed_repr (const struct aed_s *obj, char buf[], int buflen)
+{
+  int n;
+  char tmp[128];
+  n += snprintf(buf+n, buflen-n, "struct aed_s _%p = {\n", obj);
+  tag_encode(&(obj->tag), tmp, sizeof(tmp));
+  reindent_repr(tmp, sizeof(tmp), 2);
+  n += snprintf(buf+n, buflen-n, "  .tag = %s,\n", tmp);
+  n += snprintf(buf+n, buflen-n, "  .pael = %u,\n", obj->pael);
+  // TODO: calculated adlen.
+  unsigned int dlen = obj->dlen;
+  n += snprintf(buf+n, buflen-n, "  .L_AD = %u,\n", obj->dlen);
+  n += snprintf(buf+n, buflen-n, "}");
+
+  return n;
+}
+
+void
+aed_dump (const struct aed_s *obj)
+{
+  char buf[512];
+  aed_repr(obj, buf, sizeof(buf));
+  puts(buf);
+}
+
+
+
+
+
+
+
+struct layoutfield_s udf_ie[] = {
+    { 0, 0, "tag", LAYOUT_PTR },
+    { 0, 16, "icbag", LAYOUT_PTR },
+    { 0, 36, "iicb", LAYOUT_PTR },
+    { 0, 52, 0, LAYOUT_END },
+};
+
+struct ie_s *
+ie_malloc ()
+{
+  struct ie_s * obj;
+  obj = malloc(sizeof(struct ie_s));
+  memset(obj, 0, sizeof(*obj));
+  return obj;
+}
+
+struct ie_s *
+ie_destroy (struct ie_s *obj)
+{
+  return obj;
+}
+
+struct ie_s *
+ie_init (struct ie_s *obj, const struct tag_s * tag, const struct icbtag_s * icbtag, const struct long_ad_s * iicb)
+{
+  obj->tag = *tag;
+  obj->icbtag = *icbtag;
+  obj->iicb = *iicb;
+}
+
+void
+ie_free (struct ie_s *obj)
+{
+  free(ie_destroy(obj));
+}
+
+struct ie_s *
+ie_decode (const uint8_t * space, int spacelen)
+{
+  struct ie_s * obj = NULL;
+  layoutvalue_t contents[4] = { 0, };
+
+  if (!obj) return obj;
+  if (!obj || !space || !spacelen) return obj;
+
+  udf_decode(space, spacelen, udf_ie, contents);
+
+  struct tag_s * tag = tag_decode(contents[0].ptr, 16);
+  obj->tag = *tag;
+  tag_free(tag);
+
+  struct icbtag_s * icbtag = icbtag_decode(contents[1].ptr, 20);
+  obj->icbtag = *icbtag;
+  icbtag_free(icbtag);
+
+  struct long_ad_s * iicb = long_ad_decode(contents[2].ptr, 16);
+  obj->iicb = *iicb;
+  long_ad_free(iicb);
+
+  return obj;
+}
+
+int
+ie_encode (const struct ie_s *obj, uint8_t * space, int spacelen)
+{
+  layoutvalue_t contents[4] = { 0, };
+
+  uint8_t tag[16];
+  uint8_t icbtag[20];
+  uint8_t iicb[16];
+
+  tag_encode(&(obj->tag), tag, sizeof(tag));
+  icbtag_encode(&(obj->icbtag), icbtag, sizeof(icbtag));
+  long_ad_encode(&(obj->iicb), iicb, sizeof(iicb));
+
+  contents[0].ptr = tag;
+  contents[1].ptr = icbtag;
+  contents[2].ptr = iicb;
+  contents[3].word = 52;
+
+  int retval = udf_encode(space, spacelen, udf_ie, contents);
+
+  return retval;
+}
+
+int
+ie_len (const struct ie_s * obj)
+{
+  return 52;
+}
+
+int
+ie_cmp (const struct ie_s *a, const struct ie_s *b)
+{
+  // TODO: comparison.
+  int retval = memcmp(a, b, sizeof(*a));
+  return retval;
+}
+
+int
+ie_repr (const struct ie_s *obj, char buf[], int buflen)
+{
+  int n = 0;
+  char tmp[256];
+
+  n += snprintf(buf+n, buflen-n, "struct ie_s _%p = {\n", obj);
+  tag_repr(&(obj->tag), tmp, sizeof(tmp));
+  reindent_repr(tmp, sizeof(tmp), 2);
+  n += snprintf(buf+n, buflen-n, "  .tag = %s,\n", tmp);
+  icbtag_repr(&(obj->icbtag), tmp, sizeof(tmp));
+  reindent_repr(tmp, sizeof(tmp), 2);
+  n += snprintf(buf+n, buflen-n, "  .icbtag = %s,\n", tmp);
+  long_ad_repr(&(obj->iicb), tmp, sizeof(tmp));
+  reindent_repr(tmp, sizeof(tmp), 2);
+  n += snprintf(buf+n, buflen-n, "  .iicb = %s,\n", tmp);
+  n += snprintf(buf+n, buflen-n, "}");
+
+  return n;
+}
+
+void
+ie_dump (const struct ie_s *obj)
+{
+  char buf[512];
+  int n = ie_repr(obj, buf, sizeof(buf));
+  n += snprintf(buf+n, sizeof(buf)-n, ";");
+}
+
+
+
+
+
 
 
 

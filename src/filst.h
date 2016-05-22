@@ -106,11 +106,6 @@ void lb_addr_dump (const struct lb_addr_s *);
 
 
 
-#define ICBTAG_ADTYPE_SHORT 0
-#define ICBTAG_ADTYPE_LONG 1
-#define ICBTAG_ADTYPE_EXT 2
-#define ICBTAG_ADTYPE_DIRECT 3
-
 enum icb_file_type_e {
     ICBFT_OTHER,
     ICBFT_USE,
@@ -140,6 +135,12 @@ enum icb_file_type_e {
 unsigned int icb_file_type_int (enum icb_file_type_e);
 enum icb_file_type_e icb_file_type_enum (unsigned int);
 
+/* Allocation Descriptor Type: short_ad, long_ad, ext_ad, direct/not_ad */
+#define ADTYPE_SHORT 0
+#define ADTYPE_LONG 1
+#define ADTYPE_EXT 2
+#define ADTYPE_DIRECT 3
+
 struct icbtag_s {
     unsigned int prnde; /* Prior Recorded Number of Direct Entries. */
     unsigned int st;    /* Strategy Type */
@@ -163,6 +164,8 @@ struct icbtag_s {
     } flags;
 };
 
+struct icbtag_s * icbtag_malloc ();
+struct icbtag_s * icbtag_destroy (struct icbtag_s *);
 struct icbtag_s * icbtag_init (struct icbtag_s *,
 			       unsigned int previous_number_of_direct_entries,
 			       unsigned int strategy_type,
@@ -171,6 +174,11 @@ struct icbtag_s * icbtag_init (struct icbtag_s *,
 			       enum icb_file_type_e file_type,
 			       const struct lb_addr_s * parent_icb_location,
 			       unsigned int allocation_descriptor_type);
+void icbtag_free (struct icbtag_s *);
+struct icbtag_s * icbtag_decode (const uint8_t * space, int spacelen);
+int icbtag_encode (const struct icbtag_s *, uint8_t * space, int spacelen);
+int icbtag_len (const struct icbtag_s *);
+int icbtag_cmp (const struct icbtag_s *, const struct icbtag_s *);
 int icbtag_repr (const struct icbtag_s *, char[], int);
 void icbtag_dump (const struct icbtag_s *);
 
@@ -237,7 +245,15 @@ void tag_dump (const struct tag_s *);
 
 
 
+struct short_ad_s {
+    enum extent_type_e typ;
+    unsigned int len;
+    unsigned int pos;
+};
+
+
 struct long_ad_s {
+    enum extent_type_e typ;
     unsigned int len;
     struct lb_addr_s loc;
     uint8_t impuse[6];
@@ -255,6 +271,16 @@ int long_ad_encode (const struct long_ad_s *, uint8_t space[], int spacelen);
 int long_ad_cmp (const struct long_ad_s *, const struct long_ad_s *);
 int long_ad_repr (const struct long_ad_s *, char[], int);
 void long_ad_dump (const struct long_ad_s *);
+
+
+struct ext_ad_s {
+    enum extent_type_e typ; /* Extent Type */
+    unsigned int len;   /* Extent Length */
+    unsigned int rl;    /* Recorded Length */
+    unsigned int il;    /* Information Length */
+    unsigned int loc;   /* Extent Location */
+    uint8_t impuse[2];  /* Implementation Use */
+};
 
 
 
@@ -357,6 +383,70 @@ int fsd_encode (const struct fsd_s *, uint8_t * space, int spacelen);
 int fsd_cmp (const struct fsd_s *, const struct fsd_s *);
 int fsd_repr (const struct fsd_s *, char buf[], int buflen);
 void fsd_dump (const struct fsd_s *);
+
+
+
+
+/* ECMA-167/3 14.5 : Allocation Extent Descriptor */
+struct aed_s {
+    struct tag_s tag;
+    unsigned int pael;
+    unsigned int dlen;
+
+    unsigned int adtype;  // ADTYPE_*
+    unsigned int nad;  /* Number of allocation descriptors, of adtype. */
+    union {
+        uint8_t * unknown;
+        uint8_t * direct;
+        struct short_ad_s * short_ad;
+        struct long_ad_s * long_ad;
+        struct ext_ad_s * ext_ad;
+    } ad;  /* Access as Allocation Descriptors Sequence. */
+
+    uint8_t d[];    /* Storage space for Allocation Descriptors Sequence. */
+};
+
+struct aed_s * aed_malloc (int adbytes);
+struct aed_s * aed_short_malloc (int nad);
+struct aed_s * aed_long_malloc (int nad);
+struct aed_s * aed_ext_malloc (int nad);
+struct aed_s * aed_destroy (struct aed_s *);
+struct aed_s * aed_init (struct aed_s *,
+                         unsigned int pael,
+                         unsigned int adtype,
+                         const void * ad_data,
+                         unsigned int adlen);
+void aed_free (struct aed_s *);
+struct aed_s * aed_decode (const uint8_t * space, int spacelen);
+int aed_encode (const struct aed_s *, uint8_t * space, int spacelen);
+int aed_len (const struct aed_s *);
+int aed_cmp (const struct aed_s *, const struct aed_s *);
+int aed_repr (const struct aed_s *, char buf[], int buflen);
+void aed_dump (const struct aed_s *);
+
+
+
+
+struct ie_s {
+    struct tag_s tag;
+    struct icbtag_s icbtag;
+    struct long_ad_s iicb;
+};
+
+struct ie_s * ie_malloc ();
+struct ie_s * ie_destroy (struct ie_s *);
+struct ie_s * ie_init (struct ie_s *,
+                       const struct tag_s *,
+                       const struct icbtag_s *,
+                       const struct long_ad_s *);
+void ie_free (struct ie_s *);
+struct ie_s * ie_decode (const uint8_t * space, int spacelen);
+int ie_encode (const struct ie_s *, uint8_t * space, int spacelen);
+int ie_len (const struct ie_s *);
+int ie_cmp (const struct ie_s *, const struct ie_s *);
+int ie_repr (const struct ie_s *, char buf[], int buflen);
+void ie_dump (const struct ie_s *);
+
 
 
 
