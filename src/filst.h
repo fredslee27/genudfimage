@@ -426,7 +426,7 @@ void aed_dump (const struct aed_s *);
 
 
 
-
+/* Indirect Entry */
 struct ie_s {
     struct tag_s tag;
     struct icbtag_s icbtag;
@@ -446,6 +446,129 @@ int ie_len (const struct ie_s *);
 int ie_cmp (const struct ie_s *, const struct ie_s *);
 int ie_repr (const struct ie_s *, char buf[], int buflen);
 void ie_dump (const struct ie_s *);
+
+
+
+
+/* Terminal Entry */
+struct te_s {
+    struct tag_s tag;
+    struct icbtag_s icbtag;
+};
+
+struct te_s * te_malloc ();
+struct te_s * te_destroy (struct te_s *);
+struct te_s * te_init (struct te_s *);
+void te_free (struct te_s *);
+struct te_s * te_decode (const uint8_t * space, int spacelen);
+int te_encode (const struct te_s *);
+int te_cmp (const struct te_s *, const struct ie_s *);
+int te_len (const struct te_s *);
+int te_repr (const struct te_s *, char buf[], uint8_t *, int);
+void te_dump (const struct te_s *);
+
+
+
+/* File Entry */
+struct fe_s {
+};
+
+struct fe_s * fe_malloc ();
+struct fe_s * fe_destroy (struct fe_s *);
+struct fe_s * fe_init (struct fe_s *);
+void fe_free (struct fe_s *);
+struct fe_s * fe_decode (const uint8_t * space, int spacelen);
+int fe_encode (const struct fe_s *, uint8_t * space, int spacelen);
+int fe_len (const struct fe_s *);
+int fe_cmp (const struct fe_s *, const struct fe_s *);
+int fe_repr (const struct fe_s *, char buf[], int buflen);
+void fe_dump (const struct fe_s *);
+
+
+
+/* Extended Attribute Header Descriptor */
+struct eahd_s {
+};
+
+struct eahd_s * eahd_malloc ();
+struct eahd_s * eahd_destroy (struct eahd_s *);
+struct eahd_s * eahd_init (struct eahd_s *);
+void eahd_free (struct eahd_s *);
+struct eahd_s * eahd_decode (const uint8_t * space, int spacelen);
+int eahd_encode (const struct eahd_s *, uint8_t * space, int spacelen);
+int eahd_len (const struct eahd_s *);
+int eahd_cmp (const struct eahd_s *, const struct eahd_s *);
+int eahd_repr (const struct eahd_s *, char buf[], int buflen);
+void eahd_dump (const struct eahd_s *);
+
+
+
+/* Unallocated Space Entry */
+struct use_s {
+};
+
+struct use_s * use_malloc ();
+struct use_s * use_destroy (struct use_s *);
+struct use_s * use_init (struct use_s *);
+void use_free (struct use_s *);
+struct use_s * use_decode (const uint8_t * space, int spacelen);
+int use_encode (const struct use_s *, uint8_t * space, int spacelen);
+int use_len (const struct use_s *);
+int use_cmp (const struct use_s *, const struct use_s *);
+int use_repr (const struct use_s *, char buf[], int buflen);
+void use_dump (const struct use_s *);
+
+
+
+/* Space Bitmap Descriptor */
+struct sbd_s {
+};
+
+struct sbd_s * sbd_malloc ();
+struct sbd_s * sbd_destroy (struct sbd_s *);
+struct sbd_s * sbd_init (struct sbd_s *);
+void sbd_free (struct sbd_s *);
+struct sbd_s * sbd_decode (const uint8_t * space, int spacelen);
+int sbd_encode (const struct sbd_s *, uint8_t * space, int spacelen);
+int sbd_len (const struct sbd_s *);
+int sbd_cmp (const struct sbd_s *, const struct sbd_s *);
+int sbd_repr (const struct sbd_s *, char buf[], int buflen);
+void sbd_dump (const struct sbd_s *);
+
+
+
+/* Partition Integrity Entry */
+struct pie_s {
+};
+
+struct pie_s * pie_malloc ();
+struct pie_s * pie_destroy (struct pie_s *);
+struct pie_s * pie_init (struct pie_s *);
+void pie_free (struct pie_s *);
+struct pie_s * pie_decode (const uint8_t * space, int spacelen);
+int pie_encode (const struct pie_s *, uint8_t * space, int spacelen);
+int pie_len (const struct pie_s *);
+int pie_cmp (const struct pie_s *, const struct pie_s *);
+int pie_repr (const struct pie_s *, char buf[], int buflen);
+void pie_dump (const struct pie_s *);
+
+
+
+/* Extended File Entry */
+struct efe_s {
+};
+
+struct efe_s * efe_malloc ();
+struct efe_s * efe_destroy (struct efe_s *);
+struct efe_s * efe_init (struct efe_s *);
+void efe_free (struct efe_s *);
+struct efe_s * efe_decode (const uint8_t * space, int spacelen);
+int efe_encode (const struct efe_s *, uint8_t * space, int spacelen);
+int efe_len (const struct efe_s *);
+int efe_cmp (const struct efe_s *, const struct efe_s *);
+int efe_repr (const struct efe_s *, char buf[], int buflen);
+void efe_dump (const struct efe_s *);
+
 
 
 
