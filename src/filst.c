@@ -1942,6 +1942,99 @@ ie_dump (const struct ie_s *obj)
 
 
 
+struct layoutfield_s udf_te[] = {
+    { 0, 0, "tag", LAYOUT_PTR },
+    { 0, 16, "icbtag", LAYOUT_PTR },
+    { 0, 36, 0, LAYOUT_END },
+};
+
+struct te_s *
+te_malloc ()
+{
+  struct te_s * obj = NULL;
+  obj = malloc(sizeof(struct te_s));
+  memset(obj, 0, sizeof(*obj));
+  return obj;
+}
+
+struct te_s *
+te_destroy (struct te_s *obj)
+{
+  return obj;
+}
+
+struct te_s *
+te_init (struct te_s *obj)
+{
+  if (!obj) return obj;
+
+  tag_init(&(obj->tag), TAGID_TE, 3, 0, 0);
+  icbtag_init(&(obj->icbtag), 0, 0, 0, 0, ICBFT_TE, NULL, ADTYPE_DIRECT);
+
+  return obj;
+}
+
+void
+te_free (struct te_s *obj)
+{
+  free(te_destroy(obj));
+}
+
+struct te_s *
+te_decode (const uint8_t * space, int spacelen)
+{
+  struct te_s * obj = NULL;
+  layoutvalue_t contents[3] = { 0, };
+
+  if (!obj) obj = te_malloc();
+  if (!obj || !space || !spacelen) return obj;
+
+  udf_decode(space, spacelen, udf_te, contents);
+
+  struct tag_s * tag = tag_decode(contents[0].ptr, 16);
+  obj->tag = *tag;
+  tag_free(tag);
+
+  struct icbtag_s * icbtag = icbtag_decode(contents[1].ptr, 20);
+  obj->icbtag = *icbtag;
+  icbtag_free(icbtag);
+
+  return obj;
+}
+
+int
+te_encode (const struct te_s *obj)
+{
+}
+
+int
+te_cmp (const struct te_s *a, const struct ie_s *b)
+{
+}
+
+int
+te_len (const struct te_s *obj)
+{
+}
+
+int
+te_repr (const struct te_s *obj, char buf[], uint8_t *space, int spacelen)
+{
+}
+
+void
+te_dump (const struct te_s *obj)
+{
+}
+
+
+
+
+
+
+
+
+
 
 
 
