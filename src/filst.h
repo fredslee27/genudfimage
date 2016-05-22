@@ -492,7 +492,7 @@ struct eahd_s {
 
 struct eahd_s * eahd_malloc ();
 struct eahd_s * eahd_destroy (struct eahd_s *);
-struct eahd_s * eahd_init (struct eahd_s *);
+struct eahd_s * eahd_init (struct eahd_s *, unsigned int ial, unsigned int aal);
 void eahd_free (struct eahd_s *);
 struct eahd_s * eahd_decode (const uint8_t * space, int spacelen);
 int eahd_encode (const struct eahd_s *, uint8_t * space, int spacelen);
@@ -509,7 +509,10 @@ struct use_s {
 
 struct use_s * use_malloc ();
 struct use_s * use_destroy (struct use_s *);
-struct use_s * use_init (struct use_s *);
+struct use_s * use_init (struct use_s *,
+                         const struct tag_s * tag,
+                         const struct icbtag_s * icbtag,
+                         ...);
 void use_free (struct use_s *);
 struct use_s * use_decode (const uint8_t * space, int spacelen);
 int use_encode (const struct use_s *, uint8_t * space, int spacelen);
@@ -526,7 +529,10 @@ struct sbd_s {
 
 struct sbd_s * sbd_malloc ();
 struct sbd_s * sbd_destroy (struct sbd_s *);
-struct sbd_s * sbd_init (struct sbd_s *);
+struct sbd_s * sbd_init (struct sbd_s *,
+                         unsigned int nbits,
+                         unsigned int nbytes,
+                         uint8_t bitmap[]);
 void sbd_free (struct sbd_s *);
 struct sbd_s * sbd_decode (const uint8_t * space, int spacelen);
 int sbd_encode (const struct sbd_s *, uint8_t * space, int spacelen);
