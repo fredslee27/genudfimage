@@ -1,6 +1,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "filst.h"
@@ -1942,6 +1943,7 @@ ie_dump (const struct ie_s *obj)
 
 
 
+#if 0
 struct layoutfield_s udf_te[] = {
     { 0, 0, "tag", LAYOUT_PTR },
     { 0, 16, "icbtag", LAYOUT_PTR },
@@ -2026,6 +2028,8 @@ void
 te_dump (const struct te_s *obj)
 {
 }
+#endif //0
+#include "filst_te.c"
 
 
 

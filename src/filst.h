@@ -461,10 +461,10 @@ struct te_s * te_destroy (struct te_s *);
 struct te_s * te_init (struct te_s *);
 void te_free (struct te_s *);
 struct te_s * te_decode (const uint8_t * space, int spacelen);
-int te_encode (const struct te_s *);
-int te_cmp (const struct te_s *, const struct ie_s *);
+int te_encode (const struct te_s *, uint8_t * space, int spacelen);
+int te_cmp (const struct te_s *, const struct te_s *);
 int te_len (const struct te_s *);
-int te_repr (const struct te_s *, char buf[], uint8_t *, int);
+int te_repr (const struct te_s *, char buf[], int buflen);
 void te_dump (const struct te_s *);
 
 
