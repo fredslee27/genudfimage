@@ -7,7 +7,7 @@
 #include "filst.h"
 
 changequote(`??^', `??$')dnl
-define(classname, ??^te??$)dnl
+dnl define(classname, ??^te??$)dnl
 dnl
 dnl CLASS(`classname')
 define(CLASS,??^define(classname,??^$1??$)??$)dnl
@@ -15,7 +15,7 @@ dnl
 dnl
 dnl INSTFUNC_malloc(`extrasize', `extrasetup')
 define(??^INSTFUNC_malloc??$,??^struct ??$classname??^_s *
-??$classname??^_malloc ()
+??$classname??^_malloc (ifelse($1,,,size_t $1))
 {
   struct ??$classname??^_s * obj = NULL;
   size_t msize = sizeof(struct ??$classname??^_s) + ifelse($1,,0,$1);

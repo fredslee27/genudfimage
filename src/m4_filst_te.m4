@@ -1,3 +1,4 @@
+define(classname,te)dnl
 include(`defs_filst.m4')dnl
 dnl changequote(`??^', `??$')dnl
 

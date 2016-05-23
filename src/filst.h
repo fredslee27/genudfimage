@@ -471,6 +471,28 @@ void te_dump (const struct te_s *);
 
 /* File Entry */
 struct fe_s {
+  struct tag_s tag;
+  struct icbtag_s icbtag;
+  unsigned int uid;
+  unsigned int gid;
+  unsigned int p;
+  unsigned int flc;
+  unsigned int rf;
+  unsigned int rda;
+  unsigned int rl;
+  unsigned int il;
+  unsigned long long lbr;
+  struct timestamp_s adt;
+  struct timestamp_s mdt;
+  struct timestamp_s cdt;
+  unsigned long long ckpt;
+  struct long_ad_s eaicb;
+  struct regid_s impid;
+  unsigned long long uniqid;
+  unsigned int L_EA;
+  unsigned int L_AD;
+  // TODO: extended attributees
+  // TODO: allocation descriptors
 };
 
 struct fe_s * fe_malloc ();
