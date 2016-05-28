@@ -79,8 +79,8 @@ extern struct layoutfield_s udf_lb_addr[];
 int layoutvalues_dump (const layoutvalues_t layoutvalues, int count);
 
 
-int udf_decode (const void * raw, int rawlen, layoutdescr_t descr, layoutvalues_t contents);
-int udf_encode (void * space, int spacelen, layoutdescr_t descr, layoutvalues_t contents);
+int udf_decode (const void * raw, int rawlen, const layoutdescr_t descr, layoutvalues_t contents);
+int udf_encode (void * space, int spacelen, const layoutdescr_t descr, const layoutvalues_t contents);
 
 
 #endif // _CONV_H_

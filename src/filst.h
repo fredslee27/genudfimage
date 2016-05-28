@@ -2,6 +2,11 @@
 #define _FILST_H_
 
 #include <stdint.h>
+#include <stdbool.h>
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 #include "basics.h"
 
@@ -175,7 +180,7 @@ struct icbtag_s * icbtag_init (struct icbtag_s *,
 			       const struct lb_addr_s * parent_icb_location,
 			       unsigned int allocation_descriptor_type);
 void icbtag_free (struct icbtag_s *);
-struct icbtag_s * icbtag_decode (const uint8_t * space, int spacelen);
+struct icbtag_s * icbtag_decode (struct icbtag_s *, const uint8_t * space, int spacelen);
 int icbtag_encode (const struct icbtag_s *, uint8_t * space, int spacelen);
 int icbtag_len (const struct icbtag_s *);
 int icbtag_cmp (const struct icbtag_s *, const struct icbtag_s *);
@@ -235,7 +240,7 @@ struct tag_s * tag_init (struct tag_s *,
 			 unsigned int tagloc);
 void tag_free (struct tag_s *);
 unsigned int tag_check_sum (struct tag_s *);
-struct tag_s * tag_decode (const uint8_t *, int);
+struct tag_s * tag_decode (struct tag_s *, const uint8_t *, int);
 int tag_encode (const struct tag_s *, uint8_t *, int);
 int tag_repr (const struct tag_s *, char[], int);
 void tag_dump (const struct tag_s *);
@@ -456,6 +461,7 @@ struct te_s {
     struct icbtag_s icbtag;
 };
 
+#if 0
 struct te_s * te_malloc ();
 struct te_s * te_destroy (struct te_s *);
 struct te_s * te_init (struct te_s *);
@@ -466,6 +472,7 @@ int te_cmp (const struct te_s *, const struct ie_s *);
 int te_len (const struct te_s *);
 int te_repr (const struct te_s *, char buf[], uint8_t *, int);
 void te_dump (const struct te_s *);
+#endif //0
 
 
 
@@ -578,6 +585,147 @@ void efe_dump (const struct efe_s *);
 
 
 
+
+
+#if 0
+/* ICB Descriptors union */
+
+union icb_u {
+    struct {
+	struct tag_s tag;
+	struct icbtag_s icbtag;
+    } generic;
+    struct ie_s ie;
+    struct te_s te;
+    struct fe_s fe;
+    struct use_s use;
+    struct sbd_s sbd;
+    struct pie_s pie;
+    struct efe_s efe;
+};
+
+typedef union icb_u icb_t;
+
+
+/* Tag Descriptors union */
+union tag_u {
+    struct fsd_s fsd;
+    struct fid_s fid;
+    struct aed_s aed;
+    struct eahd_s eahd;
+};
+
+typedef union tag_u tag_t;
+
+
+
+/* Function Table for ICB structs. */
+struct icbfuncs_s {
+    enum tagid_e (*tagtype)();  /* What tag type is expected for this function table. */
+    int (*nfields)();  /* Calculate number of fields needed to decode UDF binary. */
+    const struct layoutfield_s* (*layoutdescr)();  /* Return UDF binary layout description as array of layoutdescr_s */
+
+    bool (*isa)(const icb_t *self);  /* Check is instance of expected type. */
+    icb_t * (*malloc)(size_t dlen);  /* Allocate on stack, with any extra dlen bytes.  */
+    icb_t * (*destroy)(icb_t *self);  /* Release internal memory handles. */
+    void (*free)(icb_t *self);  /* destroy() + free(), after type checking.*/
+    icb_t * (*decode)(icb_t *self, const uint8_t space[], size_t spacelen); /* Fill in structure from UDF binary. */
+    size_t (*encode)(const icb_t *self, uint8_t *space, size_t spacelen);  /* Fill in UDF binary from structure. */
+    size_t (*len)(const icb_t *self);  /* Calculate number of bytes needed to encode to UDF binary. */
+    int (*cmp)(const icb_t *self, const icb_t *other);  /* Comparator */
+    int (*repr)(const icb_t *self, char *buf, int buflen);  /* Generate string representation in 'buf', returns number of bytes needed to write representation. */
+    void (*dump)(const icb_t *self);  /* Generate repr() and print to stdout. */
+
+};
+
+typedef struct icbfuncs_s icbfuncs_t;
+#endif //0
+
+
+
+
+/* File Structure (Part 3) union. */
+union filst_u {
+    struct {
+	struct tag_s tag;
+	struct icbtag_s icbtag;
+    } generic;
+
+    /* Tag-only (non-ICB) */
+    struct fsd_s fsd;
+    struct fid_s fid;
+    struct aed_s aed;
+//    struct aehd_s aehd;
+
+    /* ICB-tag */
+    struct ie_s ie;
+    struct te_s te;
+    struct fe_s fe;
+    struct use_s use;
+    struct sbd_s sbd;
+    struct pie_s pie;
+    struct efe_s efe;
+};
+
+typedef union filst_u filst_t;
+
+
+
+
+typedef enum tagid_e (*filst_tagtype)();
+typedef int (*filst_nfields)();
+typedef const struct layoutfield_s* (*filst_layoutdescr)();
+
+typedef bool (*filst_isa)(const filst_t *self);
+typedef filst_t* (*filst_malloc)(size_t dlen);
+typedef filst_t* (*filst_destroy)(filst_t *self);
+typedef void (*filst_free)(filst_t *self);
+typedef filst_t* (*filst_decode)(filst_t *self, const uint8_t space[], size_t spacelen);
+typedef size_t (*filst_encode)(const filst_t *self, uint8_t *space, size_t spacelen);
+typedef size_t (*filst_len)(const filst_t *self);
+typedef int (*filst_cmp)(const filst_t *self, const filst_t *other);
+typedef int (*filst_repr)(const filst_t *self, char buf[], int buflen);
+typedef void (*filst_dump)(const filst_t *self);
+
+
+
+
+/* Function Table for File Structures. */
+struct filstfuncs_s {
+  enum tagid_e (*tagtype)();
+  int (*nfields)();
+  const struct layoutfield_s* (*layoutdescr)();
+
+  bool (*isa)(const filst_t *self);
+  filst_t* (*malloc)(size_t dlen);
+  filst_t* (*destroy)(filst_t *self);
+  void (*free)(filst_t *self);
+  filst_t* (*decode)(filst_t *self, const uint8_t space[], size_t spacelen);
+  size_t (*encode)(const filst_t *self, uint8_t *space, size_t spacelen);
+  size_t (*len)(const filst_t *self);
+  int (*cmp)(const filst_t *self, const filst_t *other);
+  int (*repr)(const filst_t *self, char buf[], int buflen);
+  void (*dump)(const filst_t *self);
+};
+
+typedef struct filstfuncs_s filstfuncs_t;
+
+
+#define FILST_FUNCTABLE(sname) struct filstfuncs_s sname##_funcs = { \
+  .tagtype = filst_##sname##_tagtype, \
+  .nfields = filst_##sname##_nfields, \
+  .layoutdescr = filst_##sname##_layoutdescr, \
+  .isa = filst_##sname##_isa, \
+  .malloc = filst_##sname##_malloc, \
+  .destroy = filst_##sname##_destroy, \
+  .free = filst_##sname##_free, \
+  .decode = filst_##sname##_decode, \
+  .encode = filst_##sname##_encode, \
+  .len = filst_##sname##_len, \
+  .cmp = filst_##sname##_cmp, \
+  .repr = filst_##sname##_repr, \
+  .dump = filst_##sname##_dump, \
+}
 
 
 

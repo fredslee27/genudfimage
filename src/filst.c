@@ -625,9 +625,9 @@ tag_check_sum (struct tag_s * obj)
 }
 
 struct tag_s *
-tag_decode (const uint8_t * space, int spacelen)
+tag_decode (struct tag_s * obj, const uint8_t * space, int spacelen)
 {
-  struct tag_s * obj = NULL;
+//  struct tag_s * obj = NULL;
 
   layoutvalue_t contents[8] = { 0, };
 
@@ -848,9 +848,9 @@ icbtag_free (struct icbtag_s *obj)
 }
 
 struct icbtag_s *
-icbtag_decode (const uint8_t * space, int spacelen)
+icbtag_decode (struct icbtag_s * obj, const uint8_t * space, int spacelen)
 {
-  struct icbtag_s * obj = NULL;
+//  struct icbtag_s * obj = NULL;
   layoutvalue_t contents[9] = { 0, };
 
   udf_decode(space, spacelen, udf_icbtag, contents);
@@ -906,6 +906,7 @@ icbtag_repr (const struct icbtag_s * obj, char buf[], int buflen)
 		icb_file_type_int(obj->ft), icb_file_type_name(obj->ft));
   char picbl[64];
   lb_addr_repr(&(obj->picbl), picbl, sizeof(picbl));
+  reindent_repr(picbl, sizeof(picbl), 2);
   n += snprintf(buf+n, buflen-n, "  .picbl = %s,\n", picbl);
   n += snprintf(buf+n, buflen-n, "  .flags = (%c*%c%c%c%c%c%c%c%c%c%c%c)",
 		"slxd"[obj->flags.adtype],
@@ -1393,7 +1394,7 @@ fsd_decode (const uint8_t * space, int spacelen)
 
   udf_decode(space, spacelen, udf_fsd, contents);
 
-  struct tag_s * tag = tag_decode(contents[0].ptr, 16);
+  struct tag_s * tag = tag_decode(NULL, contents[0].ptr, 16);
   obj->tag = *tag;
   tag_free(tag);
 
@@ -1723,7 +1724,7 @@ aed_decode (const uint8_t * space, int spacelen)
   if (!obj) obj = aed_malloc(dlen);
   if (!obj || !space || !spacelen) return obj;
 
-  struct tag_s * tag = tag_decode(contents[0].ptr, 16);
+  struct tag_s * tag = tag_decode(NULL, contents[0].ptr, 16);
   obj->tag = *tag;
   tag_free(tag);
   obj->pael = contents[1].word;
@@ -1854,11 +1855,11 @@ ie_decode (const uint8_t * space, int spacelen)
 
   udf_decode(space, spacelen, udf_ie, contents);
 
-  struct tag_s * tag = tag_decode(contents[0].ptr, 16);
+  struct tag_s * tag = tag_decode(NULL, contents[0].ptr, 16);
   obj->tag = *tag;
   tag_free(tag);
 
-  struct icbtag_s * icbtag = icbtag_decode(contents[1].ptr, 20);
+  struct icbtag_s * icbtag = icbtag_decode(NULL, contents[1].ptr, 20);
   obj->icbtag = *icbtag;
   icbtag_free(icbtag);
 
@@ -1941,7 +1942,9 @@ ie_dump (const struct ie_s *obj)
 
 
 
+#include "filst_te.c"
 
+#if 0
 struct layoutfield_s udf_te[] = {
     { 0, 0, "tag", LAYOUT_PTR },
     { 0, 16, "icbtag", LAYOUT_PTR },
@@ -2026,6 +2029,7 @@ void
 te_dump (const struct te_s *obj)
 {
 }
+#endif //0
 
 
 
@@ -2033,10 +2037,200 @@ te_dump (const struct te_s *obj)
 
 
 
+#if 0
+unsigned int len_te_udf = 0;
+struct layoutfield_s te_udf[] = {
+    { 0, 0, "tag", LAYOUT_PTR },
+    { 0, 16, "icbtag", LAYOUT_PTR },
+    { 0, 36, 0, LAYOUT_END },
+};
+
+enum tagid_e
+te_tagtype ()
+{
+  return TAGID_TE;
+}
+
+const struct layoutfield_s*
+te_layoutdescr ()
+{
+  return te_udf;
+}
+
+int
+te_nfields ()
+{
+  static const int hardlimit = 128;
+  int n = 0;
+  const struct layoutfield_s * iter = NULL;
+
+  if (len_te_udf != 0)
+    return len_te_udf;
+
+  for (iter = te_layoutdescr(); (n<hardlimit) && (iter->fldtype != LAYOUT_END); iter++, n++)
+    {
+    }
+  if (n >= hardlimit)
+    n = 0;
+  return n;
+}
+
+
+bool
+te_isa (const filst_t *uself)
+{
+  return (uself && (te_tagtype() == uself->generic.tag.tagid));
+}
+
+filst_t *
+te_malloc (size_t dlen)
+{
+  struct te_s * self = NULL;
+  self = malloc(sizeof(*self) + dlen);
+  return (filst_t*)self;
+}
+
+filst_t *
+te_destroy (filst_t *uself)
+{
+  struct te_s * self = &(uself->te);
+  if (!te_isa(uself)) return uself;
+  return uself;
+}
+
+void
+te_free (filst_t *uself)
+{
+  if (te_isa(uself))
+    {
+      te_destroy(uself);
+    }
+  free(uself);
+}
+
+filst_t *
+te_decode (filst_t *uself, const uint8_t space[], size_t spacelen)
+{
+  layoutvalue_t contents[3] = { 0, };
+
+  udf_decode(space, spacelen, te_layoutdescr(), contents);
+
+  if (uself == NULL)
+    uself = te_malloc(0);
+  if (!te_isa(uself)) return uself;
+  struct te_s * self = &(uself->te);
+
+//  tag_decode(&(self->tag), contents[0].ptr, 16);
+//  icbtag_decode(&(self->icbtag), contents[1].ptr, 20);
+  return (filst_t*)self;
+}
+
+size_t
+te_encode (const filst_t *uself, uint8_t * space, size_t spacelen)
+{
+  if (!te_isa(uself)) return 0;
+  const struct te_s * self = &(uself->te);
+  layoutvalue_t contents[3] = { 0, };
+
+  uint8_t tag[16];
+//  tag_encode(&(self->tag), tag, 16);
+  contents[0].ptr = tag;
+
+  uint8_t icbtag[20];
+  //icbtag_encode(&(self->icbtag), icbtag, 20);
+  contents[1].ptr = icbtag;
+
+  contents[2].word = 36;
+
+  size_t n = udf_encode(space, spacelen, te_layoutdescr(), contents);
+  return n;
+}
+
+size_t
+te_len (const filst_t *uself)
+{
+  if (!te_isa(uself)) return 0;
+  const struct te_s *self = &(uself->te);
+  int ofs = te_nfields();
+  unsigned int bp_end = te_layoutdescr()[ofs-1].rbp;
+
+  return bp_end;
+}
+
+int
+te_cmp (const filst_t *uself, const filst_t *icbother)
+{
+  const struct te_s *self = NULL;
+  const struct te_s *other = NULL;
+  if (te_isa(uself)) self = &(uself->te);
+  if (te_isa(icbother)) other = &(icbother->te);
+
+  return 0;
+}
+
+int
+te_repr (const filst_t *uself, char buf[], int buflen)
+{
+  if (!te_isa(uself)) return 0;
+  const struct te_s * self = &(uself->te);
+  int n, needed = 0, filled = 0;
+
+  needed += snprintf(buf+filled, buflen-filled, "struct te_s _%p = {", self);
+  filled = needed < buflen ? needed : buflen;
+
+  needed += snprintf(buf+filled, buflen-filled, "}");
+  filled = needed < buflen ? needed : buflen;
+
+  return needed;
+}
+
+void
+te_dump (const filst_t *uself)
+{
+  return;
+}
+#endif //0
 
 
 
+#if 0
+/* Function Table for ICB structs. */
+struct icbfuncs_s te_funcs = {
+    .tagtype = te_tagtype,
+    .nfields = te_nfields,
+    .layoutdescr = te_layoutdescr,
 
+    .isa = te_isa,
+    .malloc = te_malloc,
+    .destroy = te_destroy,
+    .free = te_free,
+    .decode = te_decode,
+    .encode = te_encode,
+    .len = te_len,
+    .cmp = te_cmp,
+    .repr = te_repr,
+    .dump = te_dump,
+};
+#endif //0
+#if 0
+/* Function Table for File Structure: TerminalEntry. */
+struct filstfuncs_s te_funcs = {
+    .tagtype = te_tagtype,
+    .nfields = te_nfields,
+    .layoutdescr = te_layoutdescr,
+
+    .isa = te_isa,
+    .malloc = te_malloc,
+    .destroy = te_destroy,
+    .free = te_free,
+    .decode = te_decode,
+    .encode = te_encode,
+    .len = te_len,
+    .cmp = te_cmp,
+    .repr = te_repr,
+    .dump = te_dump,
+};
+#endif //0
 
 
 

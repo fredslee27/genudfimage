@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "conv.h"
+
 /* Converter functions, byte-endian sensitive. */
 
 
@@ -206,12 +208,12 @@ _resolve_bp (const layoutdescr_t descr, const layoutvalues_t contents, int fldid
 
 
 int
-udf_decode (const void * raw, int rawlen, layoutdescr_t descr, layoutvalues_t contents)
+udf_decode (const void * raw, int rawlen, const layoutdescr_t descr, layoutvalues_t contents)
 {
   uint8_t * udfbytes = (uint8_t*)raw;
   int fldidx = 0;
   int complete = 0;
-  struct layoutfield_s * fld = descr + fldidx;
+  const struct layoutfield_s * fld = descr + fldidx;
   union layoutvalue_u * valptr = contents + fldidx;
   int bp = 0;
   //int vbp = 0;
@@ -289,15 +291,15 @@ udf_decode (const void * raw, int rawlen, layoutdescr_t descr, layoutvalues_t co
    Returns number of bytes.  Should be compared against expected number of bytes.
 */
 int
-udf_encode (void * space, int spacelen, layoutdescr_t descr, layoutvalues_t contents)
+udf_encode (void * space, int spacelen, const layoutdescr_t descr, const layoutvalues_t contents)
 {
   int retval = 0;
   unsigned int fldidx = 0;
   int complete = 0;
   int bp = 0;
   int nbp = 0; /* Next Byte Position, presumed cutoff for variable-length fields. */
-  struct layoutfield_s * fld = NULL;
-  union layoutvalue_u * valptr = NULL; //contents + fldidx;
+  const struct layoutfield_s * fld = NULL;
+  const union layoutvalue_u * valptr = NULL; //contents + fldidx;
 
   while (!complete)
     {
