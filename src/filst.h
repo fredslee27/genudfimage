@@ -411,20 +411,22 @@ struct aed_s {
     uint8_t d[];    /* Storage space for Allocation Descriptors Sequence. */
 };
 
-struct aed_s * aed_malloc (int adbytes);
+struct aed_s * aed_malloc (size_t dlen);
 struct aed_s * aed_short_malloc (int nad);
 struct aed_s * aed_long_malloc (int nad);
 struct aed_s * aed_ext_malloc (int nad);
 struct aed_s * aed_destroy (struct aed_s *);
+/*
 struct aed_s * aed_init (struct aed_s *,
                          unsigned int pael,
                          unsigned int adtype,
                          const void * ad_data,
                          unsigned int adlen);
+*/
 void aed_free (struct aed_s *);
-struct aed_s * aed_decode (const uint8_t * space, int spacelen);
-int aed_encode (const struct aed_s *, uint8_t * space, int spacelen);
-int aed_len (const struct aed_s *);
+struct aed_s * aed_decode (struct aed_s *, const uint8_t space[], size_t spacelen);
+size_t aed_encode (const struct aed_s *, uint8_t * space, size_t spacelen);
+size_t aed_len (const struct aed_s *);
 int aed_cmp (const struct aed_s *, const struct aed_s *);
 int aed_repr (const struct aed_s *, char buf[], int buflen);
 void aed_dump (const struct aed_s *);

@@ -22,6 +22,10 @@
     } \
     return n; }
 #define COMMON_FILST_LAYOUTDESCR(sname) const struct layoutfield_s* sname##_layoutdescr () { return udf_##sname; }
+#define COMMON_FILST(sname,enumval) \
+  COMMON_FILST_TAGTYPE(sname,enumval) \
+  COMMON_FILST_NFIELDS(sname) \
+  COMMON_FILST_LAYOUTDESCR(sname)
 
 #define FILST_ISA(sname) bool sname##_isa (const filst_t *uself)
 #define STD_ISA(sname) return (uself && (uself->generic.tag.tagid == sname##_tagtype()));
@@ -60,14 +64,14 @@
 #define CONTENTSVAR(n) layoutvalue_t contents[n] = { 0, }
 #define STD_DECODE(sname) udf_decode(space, spacelen, udf_##sname, contents)
 #define DECODE_STRUCT(layoutidx,slen,stype,selffld) stype##_decode(&(self->selffld), contents[layoutidx].ptr, slen)
-#define DECODE_WORD(layoutidx,lvalue) lvalue = contents[layoutidx].word
+#define DECODE_WORD(layoutidx,selffld) self->selffld = contents[layoutidx].word
 #define RETURN_DECODE(sname) return (struct sname##_s*)self
 
 /* _encode */
 #define FILST_ENCODE(sname) size_t sname##_encode (const struct sname##_s *self, uint8_t *space, size_t spacelen)
 #define ENCODINGVARS size_t n = 0
 #define ENCODE_STRUCT(layoutidx,slen,stype,selffld) uint8_t selffld[slen] = { 0, }; n += stype##_encode(&(self->selffld), selffld, slen); contents[layoutidx].ptr = selffld
-#define ENCODE_WORD(layoutidx,selffld) contents[layoutidx] = self->selffld
+#define ENCODE_WORD(layoutidx,selffld) contents[layoutidx].word = self->selffld
 #define STD_ENCODE(sname) udf_encode(space, spacelen, udf_##sname, contents)
 #define RETURN_ENCODE(sname) return n
 
