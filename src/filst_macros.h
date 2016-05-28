@@ -135,4 +135,24 @@ void filst_##sname##_dump (const filst_t * uself) { \
 
 
 
+
+
+#define FILST_FUNCTABLE(sname) struct filstfuncs_s sname##_funcs = { \
+  .tagtype = filst_##sname##_tagtype, \
+  .nfields = filst_##sname##_nfields, \
+  .layoutdescr = filst_##sname##_layoutdescr, \
+  .isa = filst_##sname##_isa, \
+  .malloc = filst_##sname##_malloc, \
+  .destroy = filst_##sname##_destroy, \
+  .free = filst_##sname##_free, \
+  .decode = filst_##sname##_decode, \
+  .encode = filst_##sname##_encode, \
+  .len = filst_##sname##_len, \
+  .cmp = filst_##sname##_cmp, \
+  .repr = filst_##sname##_repr, \
+  .dump = filst_##sname##_dump, \
+}
+
+
+
 #endif // _FILST_MACROS_H_

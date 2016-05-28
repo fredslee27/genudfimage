@@ -461,18 +461,16 @@ struct te_s {
     struct icbtag_s icbtag;
 };
 
-#if 0
 struct te_s * te_malloc ();
 struct te_s * te_destroy (struct te_s *);
 struct te_s * te_init (struct te_s *);
 void te_free (struct te_s *);
-struct te_s * te_decode (const uint8_t * space, int spacelen);
-int te_encode (const struct te_s *);
-int te_cmp (const struct te_s *, const struct ie_s *);
-int te_len (const struct te_s *);
-int te_repr (const struct te_s *, char buf[], uint8_t *, int);
+struct te_s * te_decode (struct te_s *, const uint8_t space[], size_t spacelen);
+size_t te_encode (const struct te_s *, uint8_t * space, size_t spacelen);
+int te_cmp (const struct te_s *, const struct te_s *);
+size_t te_len (const struct te_s *);
+int te_repr (const struct te_s *, char buf[], int);
 void te_dump (const struct te_s *);
-#endif //0
 
 
 
@@ -587,68 +585,13 @@ void efe_dump (const struct efe_s *);
 
 
 
-#if 0
-/* ICB Descriptors union */
-
-union icb_u {
-    struct {
-	struct tag_s tag;
-	struct icbtag_s icbtag;
-    } generic;
-    struct ie_s ie;
-    struct te_s te;
-    struct fe_s fe;
-    struct use_s use;
-    struct sbd_s sbd;
-    struct pie_s pie;
-    struct efe_s efe;
-};
-
-typedef union icb_u icb_t;
-
-
-/* Tag Descriptors union */
-union tag_u {
-    struct fsd_s fsd;
-    struct fid_s fid;
-    struct aed_s aed;
-    struct eahd_s eahd;
-};
-
-typedef union tag_u tag_t;
-
-
-
-/* Function Table for ICB structs. */
-struct icbfuncs_s {
-    enum tagid_e (*tagtype)();  /* What tag type is expected for this function table. */
-    int (*nfields)();  /* Calculate number of fields needed to decode UDF binary. */
-    const struct layoutfield_s* (*layoutdescr)();  /* Return UDF binary layout description as array of layoutdescr_s */
-
-    bool (*isa)(const icb_t *self);  /* Check is instance of expected type. */
-    icb_t * (*malloc)(size_t dlen);  /* Allocate on stack, with any extra dlen bytes.  */
-    icb_t * (*destroy)(icb_t *self);  /* Release internal memory handles. */
-    void (*free)(icb_t *self);  /* destroy() + free(), after type checking.*/
-    icb_t * (*decode)(icb_t *self, const uint8_t space[], size_t spacelen); /* Fill in structure from UDF binary. */
-    size_t (*encode)(const icb_t *self, uint8_t *space, size_t spacelen);  /* Fill in UDF binary from structure. */
-    size_t (*len)(const icb_t *self);  /* Calculate number of bytes needed to encode to UDF binary. */
-    int (*cmp)(const icb_t *self, const icb_t *other);  /* Comparator */
-    int (*repr)(const icb_t *self, char *buf, int buflen);  /* Generate string representation in 'buf', returns number of bytes needed to write representation. */
-    void (*dump)(const icb_t *self);  /* Generate repr() and print to stdout. */
-
-};
-
-typedef struct icbfuncs_s icbfuncs_t;
-#endif //0
-
-
 
 
 /* File Structure (Part 3) union. */
 union filst_u {
     struct {
 	struct tag_s tag;
-	struct icbtag_s icbtag;
+	struct icbtag_s icbtag; /* Caution: invalid access for non-ICB puns. */
     } generic;
 
     /* Tag-only (non-ICB) */
