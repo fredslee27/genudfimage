@@ -1268,6 +1268,7 @@ fid_dump (const struct fid_s *obj)
 
 
 
+#if 0
 
 struct layoutfield_s udf_fsd[] = {
     { 0, 0, "tag", LAYOUT_PTR },
@@ -1579,6 +1580,8 @@ INSTFUNC_CONST(fsd, dump) ()
   puts(buf);
 }
 
+#endif //0
+#include "filst_fsd.c"
 
 
 

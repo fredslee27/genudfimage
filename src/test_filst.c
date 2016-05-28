@@ -142,7 +142,7 @@ int test_fsd2 ()
   uint8_t testdata[512];
   struct fsd_s * fsd0;
 
-  fsd0 = fsd_malloc();
+  fsd0 = fsd_malloc(0);
 
   fsd_dump(fsd0);
 
@@ -155,7 +155,7 @@ int test_fsd3 ()
   uint8_t bindata[512] = { 0, };
   struct fsd_s * fsd0;
 
-  fsd0 = fsd_malloc();
+  fsd0 = fsd_malloc(0);
   fsd0->tag.tagid = TAGID_FSD;
   fsd0->il = 2;
   fsd0->mil = 3;

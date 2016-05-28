@@ -97,20 +97,21 @@ struct dstring_s {
 
 */
 
-struct charspec_s * charspec_malloc ();
+struct charspec_s * charspec_malloc (size_t _);
 struct charspec_s * charspec_destroy (struct charspec_s *);
 struct charspec_s * charspec_init (struct charspec_s *,
 				   unsigned int charset_type,
 				   const char * charset_info);
 void charspec_free (struct charspec_s *);
-struct charspec_s * charspec_decode (void * raw, int rawlen);
-int charspec_encode (const struct charspec_s *, void * raw, int rawlen);
+struct charspec_s * charspec_decode (struct charspec_s *, const uint8_t raw[], size_t rawlen);
+size_t charspec_encode (const struct charspec_s *, uint8_t * raw, size_t rawlen);
+size_t charspec_len (const struct charspec_s *);
 int charspec_cmp (const struct charspec_s *, const struct charspec_s *);
 int charspec_repr (const struct charspec_s *, char[], int);
 void charspec_dump (const struct charspec_s *);
 
 
-struct timestamp_s * timestamp_malloc ();
+struct timestamp_s * timestamp_malloc (size_t _);
 struct timestamp_s * timestamp_destroy (struct timestamp_s *);
 struct timestamp_s * timestamp_init (struct timestamp_s *,
 				     unsigned int tz_type,
@@ -128,8 +129,8 @@ struct timestamp_s * timestamp_from_timeval (struct timestamp_s *,
 					     const struct timeval *,
 					     const struct timezone *);
 void timestamp_free (struct timestamp_s *);
-struct timestamp_s * timestamp_decode (void * raw, int rawlen);
-int timestamp_encode (const struct timestamp_s *, void * raw, int rawlen);
+struct timestamp_s * timestamp_decode (struct timestamp_s *, const uint8_t raw[], size_t rawlen);
+size_t timestamp_encode (const struct timestamp_s *, uint8_t * raw, size_t rawlen);
 int timestamp_cmp (const struct timestamp_s *, const struct timestamp_s *);
 int timestamp_repr (const struct timestamp_s *, char[], int);
 void timestamp_dump (const struct timestamp_s *);
@@ -139,19 +140,19 @@ struct regid_s * regid_malloc ();
 struct regid_s * regid_destroy (struct regid_s *);
 struct regid_s * regid_init (struct regid_s *, const char * id);
 void regid_free (struct regid_s *);
-struct regid_s * regid_decode (void * raw, int rawlen);
-int regid_encode (const struct regid_s *, void * raw, int rawlen);
+struct regid_s * regid_decode (struct regid_s *, const uint8_t raw[], size_t rawlen);
+size_t regid_encode (const struct regid_s *, uint8_t * raw, size_t rawlen);
 int regid_cmp (const struct regid_s *, const struct regid_s *);
 int regid_repr (const struct regid_s *, char[], int);
 void regid_dump (const struct regid_s *);
 
 
-struct dstring_s * dstring_malloc ();
+struct dstring_s * dstring_malloc (size_t _);
 struct dstring_s * dstring_destroy (struct dstring_s *);
 struct dstring_s * dstring_init (struct dstring_s *, int fldlen, const char *s);
 void dstring_free (struct dstring_s *);
-struct dstring_s * dstring_decode (const uint8_t * raw, int rawlen);
-int dstring_encode (const struct dstring_s *, uint8_t * raw, int rawlen);
+struct dstring_s * dstring_decode (struct dstring_s *, const uint8_t raw[], size_t rawlen);
+size_t dstring_encode (const struct dstring_s *, uint8_t * raw, size_t rawlen);
 int dstring_cmp (const struct dstring_s *, const struct dstring_s *);
 int dstring_repr (const struct dstring_s *, char[], int);
 void dstring_dump (const struct dstring_s *);

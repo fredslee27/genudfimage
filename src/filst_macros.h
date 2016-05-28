@@ -65,6 +65,7 @@
 #define STD_DECODE(sname) udf_decode(space, spacelen, udf_##sname, contents)
 #define DECODE_STRUCT(layoutidx,slen,stype,selffld) stype##_decode(&(self->selffld), contents[layoutidx].ptr, slen)
 #define DECODE_WORD(layoutidx,selffld) self->selffld = contents[layoutidx].word
+#define DECODE_CHECK(layoutidx,val) if (contents[layoutidx].word == val)
 #define RETURN_DECODE(sname) return (struct sname##_s*)self
 
 /* _encode */

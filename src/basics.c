@@ -8,7 +8,7 @@
 
 
 struct charspec_s *
-charspec_malloc ()
+charspec_malloc (size_t _)
 {
   return (struct charspec_s*)malloc(sizeof(struct charspec_s));
 }
@@ -33,18 +33,19 @@ charspec_free (struct charspec_s *obj)
 }
 
 struct charspec_s *
-charspec_decode (void * raw, int rawlen)
+charspec_decode (struct charspec_s * obj, const uint8_t raw[], size_t rawlen)
 {
   struct charspec_s * retval;
 
-  retval = charspec_malloc();
+  //retval = charspec_malloc();
+  retval = obj;
   retval->cst = uint8_decode(raw);
   bytestr_decode(retval->csi, sizeof(retval->csi), raw+1, rawlen-1);
   return retval;
 }
 
-int
-charspec_encode (const struct charspec_s * obj, void * raw, int rawlen)
+size_t
+charspec_encode (const struct charspec_s * obj, uint8_t * raw, size_t rawlen)
 {
   int ofs = 0;
   ofs += uint8_encode(raw+ofs, obj->cst);
@@ -85,7 +86,7 @@ charspec_dump (const struct charspec_s * obj)
 
 
 struct timestamp_s *
-timestamp_malloc ()
+timestamp_malloc (size_t _)
 {
   return (struct timestamp_s*)malloc(sizeof(struct timestamp_s));
 }
@@ -169,11 +170,12 @@ timestamp_free (struct timestamp_s *obj)
 }
 
 struct timestamp_s *
-timestamp_decode (void * raw, int rawlen)
+timestamp_decode (struct timestamp_s *obj, const uint8_t raw[], size_t rawlen)
 {
   struct timestamp_s * retval;
 
-  retval = timestamp_malloc();
+  //retval = timestamp_malloc();
+  retval = obj;
   unsigned int typtz = uint16_decode(raw+0);
   unsigned int typ = (typtz >> 12);
   int tzofs = (typtz & 0x0fff);
@@ -201,8 +203,8 @@ timestamp_decode (void * raw, int rawlen)
   retval->usec = (csec * 10000) + (husec * 100) + (usec * 1);
 }
 
-int
-timestamp_encode (const struct timestamp_s *obj, void * raw, int rawlen)
+size_t
+timestamp_encode (const struct timestamp_s *obj, uint8_t *raw, size_t rawlen)
 {
   unsigned int typtz;
   unsigned int utzofs;
@@ -282,7 +284,7 @@ timestamp_dump (const struct timestamp_s *obj)
 
 
 struct regid_s *
-regid_malloc ()
+regid_malloc (size_t _)
 {
   return (struct regid_s*)malloc(sizeof(struct regid_s));
 }
@@ -313,9 +315,9 @@ regid_free (struct regid_s *obj)
 }
 
 struct regid_s *
-regid_decode (void * raw, int rawlen)
+regid_decode (struct regid_s * obj, const uint8_t raw[], size_t rawlen)
 {
-  struct regid_s * obj = regid_malloc();
+  //struct regid_s * obj = regid_malloc();
 
   unsigned int uflag = uint8_decode(raw+0);
   obj->flags.dirty = ((uflag & REGID_FLAGS_DIRTY) == REGID_FLAGS_DIRTY);
@@ -325,8 +327,8 @@ regid_decode (void * raw, int rawlen)
   return obj;
 }
 
-int
-regid_encode (const struct regid_s *obj, void * raw, int rawlen)
+size_t
+regid_encode (const struct regid_s *obj, uint8_t * raw, size_t rawlen)
 {
   int ofs = 0;
   unsigned int uflag = 0;
@@ -378,7 +380,7 @@ regid_dump (const struct regid_s *obj)
 
 
 struct dstring_s *
-dstring_malloc ()
+dstring_malloc (size_t _)
 {
   return (struct dstring_s*)malloc(sizeof(struct dstring_s));
 }
@@ -408,9 +410,9 @@ dstring_free (struct dstring_s *obj)
 }
 
 struct dstring_s *
-dstring_decode (const uint8_t * raw, int rawlen)
+dstring_decode (struct dstring_s * obj, const uint8_t raw[], size_t rawlen)
 {
-  struct dstring_s * obj = malloc(sizeof(struct dstring_s));
+  //struct dstring_s * obj = malloc(sizeof(struct dstring_s));
 
   memset(obj, 0, sizeof(*obj));
   obj->size = rawlen;
@@ -421,8 +423,8 @@ dstring_decode (const uint8_t * raw, int rawlen)
   return obj;
 }
 
-int
-dstring_encode (const struct dstring_s *obj, uint8_t * raw, int rawlen)
+size_t
+dstring_encode (const struct dstring_s *obj, uint8_t * raw, size_t rawlen)
 {
   memcpy(raw, obj->d, obj->len);
   memset(raw + obj->len, 0, rawlen - obj->len);

@@ -354,8 +354,9 @@ struct fsd_s {
 };
 
 
-struct fsd_s * fsd_malloc ();
+struct fsd_s * fsd_malloc (size_t dlen);
 struct fsd_s * fsd_destroy (struct fsd_s *);
+/*
 struct fsd_s * fsd_init (struct fsd_s *,
                          const struct tag_s * tag,
                          const struct timestamp_s * rdt,
@@ -382,9 +383,11 @@ struct fsd_s * fsd_init_atoms (struct fsd_s *,
                                unsigned int mcsl,
                                unsigned int fsn,
                                unsigned int fsdn);
+*/
 void fsd_free (struct fsd_s *);
-struct fsd_s * fsd_decode (const uint8_t * space, int spacelen);
-int fsd_encode (const struct fsd_s *, uint8_t * space, int spacelen);
+struct fsd_s * fsd_decode (struct fsd_s *, const uint8_t space[], size_t spacelen);
+size_t fsd_encode (const struct fsd_s *, uint8_t * space, size_t spacelen);
+size_t fsd_len (const struct fsd_s *);
 int fsd_cmp (const struct fsd_s *, const struct fsd_s *);
 int fsd_repr (const struct fsd_s *, char buf[], int buflen);
 void fsd_dump (const struct fsd_s *);

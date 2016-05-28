@@ -48,19 +48,19 @@ int uint64_encode (void * space, uint64_t val)
 
 
 
-uint8_t uint8_decode (void * space)
+uint8_t uint8_decode (const void * space)
 {
   return *((uint8_t*)(space));
 }
 
-uint16_t uint16_decode (void * space)
+uint16_t uint16_decode (const void * space)
 {
 //  return *((uint16_t*)(space));
   uint8_t * x = (uint8_t*)space;
   return (uint16_t)(x[0])<<0 | (uint16_t)(x[1])<<8;
 }
 
-uint32_t uint32_decode (void * space)
+uint32_t uint32_decode (const void * space)
 {
 //  return *((uint32_t*)(space));
   uint8_t * x = (uint8_t*)space;
@@ -68,7 +68,7 @@ uint32_t uint32_decode (void * space)
        | (uint32_t)(x[2])<<16 | (uint32_t)(x[3])<<24;
 }
 
-uint64_t uint64_decode (void * space)
+uint64_t uint64_decode (const void * space)
 {
 //  return *((uint64_t*)(space));
   uint8_t * x = (uint8_t*)space;
