@@ -271,7 +271,7 @@ struct long_ad_s * long_ad_init (struct long_ad_s *,
 				 const struct lb_addr_s * loc,
 				 uint8_t impuse[6]);
 void long_ad_free (struct long_ad_s *);
-struct long_ad_s * long_ad_decode (uint8_t * space, int spacelen);
+struct long_ad_s * long_ad_decode (struct long_ad_s *, const uint8_t space[], int spacelen);
 int long_ad_encode (const struct long_ad_s *, uint8_t space[], int spacelen);
 int long_ad_cmp (const struct long_ad_s *, const struct long_ad_s *);
 int long_ad_repr (const struct long_ad_s *, char[], int);
@@ -440,14 +440,16 @@ struct ie_s {
 
 struct ie_s * ie_malloc ();
 struct ie_s * ie_destroy (struct ie_s *);
+#if 0
 struct ie_s * ie_init (struct ie_s *,
                        const struct tag_s *,
                        const struct icbtag_s *,
                        const struct long_ad_s *);
+#endif //0
 void ie_free (struct ie_s *);
-struct ie_s * ie_decode (const uint8_t * space, int spacelen);
-int ie_encode (const struct ie_s *, uint8_t * space, int spacelen);
-int ie_len (const struct ie_s *);
+struct ie_s * ie_decode (struct ie_s *, const uint8_t space[], size_t spacelen);
+size_t ie_encode (const struct ie_s *, uint8_t * space, size_t spacelen);
+size_t ie_len (const struct ie_s *);
 int ie_cmp (const struct ie_s *, const struct ie_s *);
 int ie_repr (const struct ie_s *, char buf[], int buflen);
 void ie_dump (const struct ie_s *);

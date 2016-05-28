@@ -170,6 +170,17 @@ int test_fsd3 ()
 }
 
 
+int test_ie2 ()
+{
+  uint8_t bindata[2048] = { 0, };
+  struct ie_s * ie2;
+  ie2 = ie_malloc(0);
+  ie_dump(ie2);
+  int n = ie_encode(ie2, bindata, sizeof(bindata));
+  hexdump(bindata, n);
+  return 0;
+}
+
 int test_te2 ()
 {
   uint8_t bindata[2048] = { 0, };
@@ -196,6 +207,7 @@ int main ()
   test_fsd3();
 
   test_te2();
+  test_ie2();
   return 0;
 }
 

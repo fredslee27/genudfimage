@@ -59,8 +59,7 @@
 #define FILST_DECODE(sname) struct sname##_s * sname##_decode (struct sname##_s *self, const uint8_t space[], size_t spacelen)
 #define CONTENTSVAR(n) layoutvalue_t contents[n] = { 0, }
 #define STD_DECODE(sname) udf_decode(space, spacelen, udf_##sname, contents)
-//#define DECODE_STRUCT(stype,selffld,ptr,slen) stype##_decode((filst_t*)&(self->selffld), ptr, slen)
-#define DECODE_STRUCT(layoutidx,slen,selffld,stype) stype##_decode(&(self->selffld), contents[layoutidx].ptr, slen)
+#define DECODE_STRUCT(layoutidx,slen,stype,selffld) stype##_decode(&(self->selffld), contents[layoutidx].ptr, slen)
 #define DECODE_WORD(layoutidx,lvalue) lvalue = contents[layoutidx].word
 #define RETURN_DECODE(sname) return (struct sname##_s*)self
 
@@ -88,7 +87,7 @@
 #define REPR_ATOM(fld,fmt) n += snprintf(buf+m, buflen-m, "  ." #fld " = " #fmt ",\n", self->fld); m = n<buflen ? n : buflen
 #define REPR_STRUCT(stype,fld) stype##_repr(&(self->fld), tmp, sizeof(tmp)); reindent_repr(tmp, sizeof(tmp), 2); n += snprintf(buf+m, buflen-m, "  .%s = %s,\n", #fld, tmp); m = n<buflen ? n : buflen
 #define REPR_FOOTER(sname) n += snprintf(buf+m, buflen-m, "}"); m = n<buflen ?  n : buflen
-#define RETURN_REPR return n
+#define RETURN_REPR(sname) return n
 
 /* _dump */
 #define FILST_DUMP(sname) void sname##_dump (const struct sname##_s *self)

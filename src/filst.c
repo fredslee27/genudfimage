@@ -981,9 +981,8 @@ long_ad_free (struct long_ad_s *obj)
 }
 
 struct long_ad_s *
-long_ad_decode (uint8_t * space, int spacelen)
+long_ad_decode (struct long_ad_s *obj, const uint8_t space[], int spacelen)
 {
-  struct long_ad_s * obj = NULL;
   layoutvalue_t contents[4] = { 0, };
 
   if (!obj) obj = long_ad_malloc();
@@ -1433,7 +1432,7 @@ fsd_decode (const uint8_t * space, int spacelen)
   obj->afid = *fsid;
   dstring_free(afid);
 
-  struct long_ad_s * rdicb = long_ad_decode(contents[14].ptr, 16);
+  struct long_ad_s * rdicb = long_ad_decode(NULL, contents[14].ptr, 16);
   obj->rdicb = *rdicb;
   long_ad_free(rdicb);
 
@@ -1441,11 +1440,11 @@ fsd_decode (const uint8_t * space, int spacelen)
   obj->domid = *domid;
   regid_free(domid);
 
-  struct long_ad_s * ne = long_ad_decode(contents[16].ptr, 16);
+  struct long_ad_s * ne = long_ad_decode(NULL, contents[16].ptr, 16);
   obj->ne = *ne;
   long_ad_free(ne);
 
-  struct long_ad_s * ssdicb = long_ad_decode(contents[17].ptr, 16);
+  struct long_ad_s * ssdicb = long_ad_decode(NULL, contents[17].ptr, 16);
   obj->ssdicb = *ssdicb;
   long_ad_free(ssdicb);
 
@@ -1806,138 +1805,7 @@ aed_dump (const struct aed_s *obj)
 
 
 
-
-
-struct layoutfield_s udf_ie[] = {
-    { 0, 0, "tag", LAYOUT_PTR },
-    { 0, 16, "icbag", LAYOUT_PTR },
-    { 0, 36, "iicb", LAYOUT_PTR },
-    { 0, 52, 0, LAYOUT_END },
-};
-
-struct ie_s *
-ie_malloc ()
-{
-  struct ie_s * obj;
-  obj = malloc(sizeof(struct ie_s));
-  memset(obj, 0, sizeof(*obj));
-  return obj;
-}
-
-struct ie_s *
-ie_destroy (struct ie_s *obj)
-{
-  return obj;
-}
-
-struct ie_s *
-ie_init (struct ie_s *obj, const struct tag_s * tag, const struct icbtag_s * icbtag, const struct long_ad_s * iicb)
-{
-  obj->tag = *tag;
-  obj->icbtag = *icbtag;
-  obj->iicb = *iicb;
-}
-
-void
-ie_free (struct ie_s *obj)
-{
-  free(ie_destroy(obj));
-}
-
-struct ie_s *
-ie_decode (const uint8_t * space, int spacelen)
-{
-  struct ie_s * obj = NULL;
-  layoutvalue_t contents[4] = { 0, };
-
-  if (!obj) return obj;
-  if (!obj || !space || !spacelen) return obj;
-
-  udf_decode(space, spacelen, udf_ie, contents);
-
-  struct tag_s * tag = tag_decode(NULL, contents[0].ptr, 16);
-  obj->tag = *tag;
-  tag_free(tag);
-
-  struct icbtag_s * icbtag = icbtag_decode(NULL, contents[1].ptr, 20);
-  obj->icbtag = *icbtag;
-  icbtag_free(icbtag);
-
-  struct long_ad_s * iicb = long_ad_decode(contents[2].ptr, 16);
-  obj->iicb = *iicb;
-  long_ad_free(iicb);
-
-  return obj;
-}
-
-int
-ie_encode (const struct ie_s *obj, uint8_t * space, int spacelen)
-{
-  layoutvalue_t contents[4] = { 0, };
-
-  uint8_t tag[16];
-  uint8_t icbtag[20];
-  uint8_t iicb[16];
-
-  tag_encode(&(obj->tag), tag, sizeof(tag));
-  icbtag_encode(&(obj->icbtag), icbtag, sizeof(icbtag));
-  long_ad_encode(&(obj->iicb), iicb, sizeof(iicb));
-
-  contents[0].ptr = tag;
-  contents[1].ptr = icbtag;
-  contents[2].ptr = iicb;
-  contents[3].word = 52;
-
-  int retval = udf_encode(space, spacelen, udf_ie, contents);
-
-  return retval;
-}
-
-int
-ie_len (const struct ie_s * obj)
-{
-  return 52;
-}
-
-int
-ie_cmp (const struct ie_s *a, const struct ie_s *b)
-{
-  // TODO: comparison.
-  int retval = memcmp(a, b, sizeof(*a));
-  return retval;
-}
-
-int
-ie_repr (const struct ie_s *obj, char buf[], int buflen)
-{
-  int n = 0;
-  char tmp[256];
-
-  n += snprintf(buf+n, buflen-n, "struct ie_s _%p = {\n", obj);
-  tag_repr(&(obj->tag), tmp, sizeof(tmp));
-  reindent_repr(tmp, sizeof(tmp), 2);
-  n += snprintf(buf+n, buflen-n, "  .tag = %s,\n", tmp);
-  icbtag_repr(&(obj->icbtag), tmp, sizeof(tmp));
-  reindent_repr(tmp, sizeof(tmp), 2);
-  n += snprintf(buf+n, buflen-n, "  .icbtag = %s,\n", tmp);
-  long_ad_repr(&(obj->iicb), tmp, sizeof(tmp));
-  reindent_repr(tmp, sizeof(tmp), 2);
-  n += snprintf(buf+n, buflen-n, "  .iicb = %s,\n", tmp);
-  n += snprintf(buf+n, buflen-n, "}");
-
-  return n;
-}
-
-void
-ie_dump (const struct ie_s *obj)
-{
-  char buf[512];
-  int n = ie_repr(obj, buf, sizeof(buf));
-  n += snprintf(buf+n, sizeof(buf)-n, ";");
-}
-
-
-
+#include "filst_ie.c"
 
 
 #include "filst_te.c"

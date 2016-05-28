@@ -1,6 +1,3 @@
-#include "filst.h"
-#include "util.h"
-
 #include "filst_macros.h"
 
 
@@ -105,7 +102,7 @@ FILST_REPR(te)
   REPR_STRUCT(icbtag, icbtag);
   REPR_FOOTER(te);
 
-  RETURN_REPR;
+  RETURN_REPR(te);
 }
 
 FILST_DUMP(te)
