@@ -91,6 +91,7 @@
 #define REPR_HEADER(sname) n += snprintf(buf+m, buflen-m, "struct " #sname "_s _%p = {\n", self); m = n<buflen ? n : buflen
 #define REPR_ATOM(fld,fmt) n += snprintf(buf+m, buflen-m, "  ." #fld " = " #fmt ",\n", self->fld); m = n<buflen ? n : buflen
 #define REPR_STRUCT(stype,fld) stype##_repr(&(self->fld), tmp, sizeof(tmp)); reindent_repr(tmp, sizeof(tmp), 2); n += snprintf(buf+m, buflen-m, "  .%s = %s,\n", #fld, tmp); m = n<buflen ? n : buflen
+#define REPR_LITERAL(lit) n += snprintf(buf+m, buflen-m, lit); m = n<buflen ? n : buflen
 #define REPR_FOOTER(sname) n += snprintf(buf+m, buflen-m, "}"); m = n<buflen ?  n : buflen
 #define RETURN_REPR(sname) return n
 

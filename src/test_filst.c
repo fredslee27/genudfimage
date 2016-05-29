@@ -181,6 +181,7 @@ int test_ie2 ()
   return 0;
 }
 
+
 int test_te2 ()
 {
   uint8_t bindata[2048] = { 0, };
@@ -188,6 +189,18 @@ int test_te2 ()
   te2 = te_malloc(0);
   te_dump(te2);
   int n = te_encode(te2, bindata, sizeof(bindata));
+  hexdump(bindata, n);
+  return 0;
+}
+
+
+int test_fe2 ()
+{
+  uint8_t bindata[2048] = { 0, };
+  struct fe_s * fe2;
+  fe2 = fe_malloc(0);
+  fe_dump(fe2);
+  int n = fe_encode(fe2, bindata, sizeof(bindata));
   hexdump(bindata, n);
   return 0;
 }
@@ -207,7 +220,10 @@ int main ()
   test_fsd3();
 
   test_te2();
+
   test_ie2();
+
+  test_fe2();
   return 0;
 }
 

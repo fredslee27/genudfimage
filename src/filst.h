@@ -483,15 +483,36 @@ void te_dump (const struct te_s *);
 
 /* File Entry */
 struct fe_s {
+    struct tag_s tag;
+    struct icbtag_s icbtag;
+    unsigned int uid;
+    unsigned int gid;
+    unsigned int p;
+    unsigned int flc;
+    unsigned int rf;
+    unsigned int rda;
+    unsigned int rl;
+    unsigned long long il;
+    unsigned long long lbr;
+    struct timestamp_s adt;
+    struct timestamp_s mdt;
+    struct timestamp_s cdt;
+    unsigned int ckpt;
+    struct long_ad_s eaicb;
+    struct regid_s impid;
+    unsigned long long uniqid;
+
+    // TODO: Extended Attributes[]
+    // TODO: Allocation Descriptors[]
 };
 
-struct fe_s * fe_malloc ();
+struct fe_s * fe_malloc (size_t _);
 struct fe_s * fe_destroy (struct fe_s *);
 struct fe_s * fe_init (struct fe_s *);
 void fe_free (struct fe_s *);
-struct fe_s * fe_decode (const uint8_t * space, int spacelen);
-int fe_encode (const struct fe_s *, uint8_t * space, int spacelen);
-int fe_len (const struct fe_s *);
+struct fe_s * fe_decode (struct fe_s *, const uint8_t space[], size_t spacelen);
+size_t fe_encode (const struct fe_s *, uint8_t * space, size_t spacelen);
+size_t fe_len (const struct fe_s *);
 int fe_cmp (const struct fe_s *, const struct fe_s *);
 int fe_repr (const struct fe_s *, char buf[], int buflen);
 void fe_dump (const struct fe_s *);
