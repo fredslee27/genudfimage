@@ -1281,3 +1281,6 @@ fid_dump (const struct fid_s *obj)
 
 
 #include "filst_fe.c"
+
+
+#include "filst_eahd.c"

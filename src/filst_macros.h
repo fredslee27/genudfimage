@@ -70,11 +70,12 @@
 
 /* _encode */
 #define FILST_ENCODE(sname) size_t sname##_encode (const struct sname##_s *self, uint8_t *space, size_t spacelen)
-#define ENCODINGVARS size_t n = 0
+#define ENCODINGVARS size_t n = 0, m = 0
 #define ENCODE_STRUCT(layoutidx,slen,stype,selffld) uint8_t selffld[slen] = { 0, }; n += stype##_encode(&(self->selffld), selffld, slen); contents[layoutidx].ptr = selffld
 #define ENCODE_WORD(layoutidx,selffld) contents[layoutidx].word = self->selffld
-#define STD_ENCODE(sname) udf_encode(space, spacelen, udf_##sname, contents)
-#define RETURN_ENCODE(sname) return n
+#define STD_ENCODE(sname) m = udf_encode(space, spacelen, udf_##sname, contents)
+// TODO: figure out return value.
+#define RETURN_ENCODE(sname) return m
 
 /* _cmp */
 #define FILST_CMP(sname) int sname##_cmp (const struct sname##_s *self, const struct sname##_s *other)

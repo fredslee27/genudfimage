@@ -521,15 +521,20 @@ void fe_dump (const struct fe_s *);
 
 /* Extended Attribute Header Descriptor */
 struct eahd_s {
+    struct tag_s tag;
+    unsigned int ial;
+    unsigned int aal;
+    // TODO: ImplementationAttributes[]
+    // TODO: ApplicationAttributes[]
 };
 
-struct eahd_s * eahd_malloc ();
+struct eahd_s * eahd_malloc (size_t dlen);
 struct eahd_s * eahd_destroy (struct eahd_s *);
 struct eahd_s * eahd_init (struct eahd_s *, unsigned int ial, unsigned int aal);
 void eahd_free (struct eahd_s *);
-struct eahd_s * eahd_decode (const uint8_t * space, int spacelen);
-int eahd_encode (const struct eahd_s *, uint8_t * space, int spacelen);
-int eahd_len (const struct eahd_s *);
+struct eahd_s * eahd_decode (struct eahd_s *, const uint8_t space[], size_t spacelen);
+size_t eahd_encode (const struct eahd_s *, uint8_t * space, size_t spacelen);
+size_t eahd_len (const struct eahd_s *);
 int eahd_cmp (const struct eahd_s *, const struct eahd_s *);
 int eahd_repr (const struct eahd_s *, char buf[], int buflen);
 void eahd_dump (const struct eahd_s *);
@@ -626,7 +631,7 @@ union filst_u {
     struct fsd_s fsd;
     struct fid_s fid;
     struct aed_s aed;
-//    struct aehd_s aehd;
+    struct eahd_s eahd;
 
     /* ICB-tag */
     struct ie_s ie;

@@ -206,6 +206,18 @@ int test_fe2 ()
 }
 
 
+int test_eahd2 ()
+{
+  uint8_t bindata[2048] = { 0, };
+  struct eahd_s * eahd2;
+  eahd2 = eahd_malloc(0);
+  eahd_dump(eahd2);
+  int n = eahd_encode(eahd2, bindata, sizeof(bindata));
+  hexdump(bindata, n);
+  return 0;
+}
+
+
 int main ()
 {
   test_pc1();
@@ -224,6 +236,8 @@ int main ()
   test_ie2();
 
   test_fe2();
+
+  test_eahd2();
   return 0;
 }
 
