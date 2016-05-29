@@ -242,6 +242,18 @@ int test_sbd2 ()
 }
 
 
+int test_efe2 ()
+{
+  uint8_t bindata[2048] = { 0, };
+  struct efe_s * efe2;
+  efe2 = efe_malloc(0);
+  efe_dump(efe2);
+  int n = efe_encode(efe2, bindata, sizeof(bindata));
+  hexdump(bindata, n);
+  return 0;
+}
+
+
 int main ()
 {
   test_pc1();
@@ -266,6 +278,9 @@ int main ()
   test_use2();
 
   test_sbd2();
+
+
+  test_efe2();
 
   return 0;
 }

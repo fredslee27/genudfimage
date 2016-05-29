@@ -611,15 +611,43 @@ void pie_dump (const struct pie_s *);
 
 /* Extended File Entry */
 struct efe_s {
+    struct tag_s tag;
+    struct icbtag_s icbtag;
+    unsigned int uid;
+    unsigned int gid;
+    unsigned int p;
+    unsigned int flc;
+    unsigned int rf;
+    unsigned int rda;
+    unsigned int rl;
+    unsigned long long il;
+    unsigned long long os;
+    unsigned long long lbr;
+    struct timestamp_s adt;
+    struct timestamp_s mdt;
+    struct timestamp_s cdt;
+    struct timestamp_s tdt;
+    unsigned int ckpt;
+    struct long_ad_s eaicb;
+    struct long_ad_s sdicb;
+    struct regid_s impid;
+    unsigned long long uniqid;
+
+    // TODO: Extended Attributes[]
+    // TODO: Allocation Descriptors[]
+
+    uint8_t d[];
 };
 
-struct efe_s * efe_malloc ();
+struct efe_s * efe_malloc (size_t dlen);
 struct efe_s * efe_destroy (struct efe_s *);
+/*
 struct efe_s * efe_init (struct efe_s *);
+*/
 void efe_free (struct efe_s *);
-struct efe_s * efe_decode (const uint8_t * space, int spacelen);
-int efe_encode (const struct efe_s *, uint8_t * space, int spacelen);
-int efe_len (const struct efe_s *);
+struct efe_s * efe_decode (struct efe_s *, const uint8_t space[], size_t spacelen);
+size_t efe_encode (const struct efe_s *, uint8_t * space, size_t spacelen);
+size_t efe_len (const struct efe_s *);
 int efe_cmp (const struct efe_s *, const struct efe_s *);
 int efe_repr (const struct efe_s *, char buf[], int buflen);
 void efe_dump (const struct efe_s *);
