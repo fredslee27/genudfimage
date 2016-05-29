@@ -218,6 +218,30 @@ int test_eahd2 ()
 }
 
 
+int test_use2 ()
+{
+  uint8_t bindata[2048] = { 0, };
+  struct use_s * use2;
+  use2 = use_malloc(0);
+  use_dump(use2);
+  int n = use_encode(use2, bindata, sizeof(bindata));
+  hexdump(bindata, n);
+  return 0;
+}
+
+
+int test_sbd2 ()
+{
+  uint8_t bindata[2048] = { 0, };
+  struct sbd_s * sbd2;
+  sbd2 = sbd_malloc(0);
+  sbd_dump(sbd2);
+  int n = sbd_encode(sbd2, bindata, sizeof(bindata));
+  hexdump(bindata, n);
+  return 0;
+}
+
+
 int main ()
 {
   test_pc1();
@@ -238,6 +262,11 @@ int main ()
   test_fe2();
 
   test_eahd2();
+
+  test_use2();
+
+  test_sbd2();
+
   return 0;
 }
 

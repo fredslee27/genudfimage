@@ -543,18 +543,23 @@ void eahd_dump (const struct eahd_s *);
 
 /* Unallocated Space Entry */
 struct use_s {
+    struct tag_s tag;
+    struct icbtag_s icbtag;
+
+    // TODO: AllocationDescriptors[]
+    unsigned int L_AD;
 };
 
-struct use_s * use_malloc ();
+struct use_s * use_malloc (size_t dlen);
 struct use_s * use_destroy (struct use_s *);
 struct use_s * use_init (struct use_s *,
                          const struct tag_s * tag,
                          const struct icbtag_s * icbtag,
                          ...);
 void use_free (struct use_s *);
-struct use_s * use_decode (const uint8_t * space, int spacelen);
-int use_encode (const struct use_s *, uint8_t * space, int spacelen);
-int use_len (const struct use_s *);
+struct use_s * use_decode (struct use_s *, const uint8_t space[], size_t spacelen);
+size_t use_encode (const struct use_s *, uint8_t * space, size_t spacelen);
+size_t use_len (const struct use_s *);
 int use_cmp (const struct use_s *, const struct use_s *);
 int use_repr (const struct use_s *, char buf[], int buflen);
 void use_dump (const struct use_s *);
@@ -563,18 +568,24 @@ void use_dump (const struct use_s *);
 
 /* Space Bitmap Descriptor */
 struct sbd_s {
+    struct tag_s tag;
+    unsigned int N_BT;
+    unsigned int N_B;
+    uint8_t * bm;
+
+    uint8_t d[];
 };
 
-struct sbd_s * sbd_malloc ();
+struct sbd_s * sbd_malloc (size_t dlen);
 struct sbd_s * sbd_destroy (struct sbd_s *);
 struct sbd_s * sbd_init (struct sbd_s *,
                          unsigned int nbits,
                          unsigned int nbytes,
                          uint8_t bitmap[]);
 void sbd_free (struct sbd_s *);
-struct sbd_s * sbd_decode (const uint8_t * space, int spacelen);
-int sbd_encode (const struct sbd_s *, uint8_t * space, int spacelen);
-int sbd_len (const struct sbd_s *);
+struct sbd_s * sbd_decode (struct sbd_s *, const uint8_t space[], size_t spacelen);
+size_t sbd_encode (const struct sbd_s *, uint8_t * space, size_t spacelen);
+size_t sbd_len (const struct sbd_s *);
 int sbd_cmp (const struct sbd_s *, const struct sbd_s *);
 int sbd_repr (const struct sbd_s *, char buf[], int buflen);
 void sbd_dump (const struct sbd_s *);
@@ -632,13 +643,13 @@ union filst_u {
     struct fid_s fid;
     struct aed_s aed;
     struct eahd_s eahd;
+    struct sbd_s sbd;
 
     /* ICB-tag */
     struct ie_s ie;
     struct te_s te;
     struct fe_s fe;
     struct use_s use;
-    struct sbd_s sbd;
     struct pie_s pie;
     struct efe_s efe;
 };
